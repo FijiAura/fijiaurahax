@@ -1,0 +1,99 @@
+{
+	"default": {
+		"name": "Default",
+		"preview": 12255231,
+		"windows": {
+			"gameplay": {
+				"background": 269488383,
+				"background_hover": 112,
+				"text": 3755988991,
+				"primary": 4290491903,
+				"window": 4283844863,
+				"inactive": 1381192191,
+				"active": 3541633791,
+				"title": 255
+			},
+			"fps_bypass": {
+				"background": 269488383,
+				"background_hover": 112,
+				"text": 3621511167,
+				"primary": 4275306495,
+				"window": 4200923135,
+				"inactive": 1397838847,
+				"active": 2584911871,
+				"title": 255
+			},
+			"speedhack": {
+				"background": 269488383,
+				"background_hover": 112,
+				"text": 3755988991,
+				"primary": 4261396479,
+				"window": 4143907071,
+				"inactive": 1381192191,
+				"active": 2391998719,
+				"title": 255
+			},
+			"options": {
+				"background": 269488383,
+				"background_hover": 112,
+				"text": 3755988991,
+				"primary": 3001745407,
+				"window": 12255231,
+				"inactive": 1381192191,
+				"active": 6786815,
+				"title": 255
+			}
+		}
+	},
+	"default-light": {
+		"name": "Default (Light)",
+		"preview": 4283844863,
+		"windows": {
+			"gameplay": {
+				"background": 4294967295,
+				"background_hover": 3217014640,
+				"text": 255,
+				"primary": 4280685567,
+				"window": 4283844863,
+				"inactive": 1381192191,
+				"active": 4284371455,
+				"title": 255
+			},
+			"fps_bypass": {
+				"background": 4294967295,
+				"background_hover": 3705461872,
+				"text": 255,
+				"primary": 3976262399,
+				"window": 4200923135,
+				"inactive": 1397838847,
+				"active": 4201644031,
+				"title": 255
+			},
+			"speedhack": {
+				"background": 4294967295,
+				"background_hover": 3217014640,
+				"text": 255,
+				"primary": 1751974143,
+				"window": 4143907071,
+				"inactive": 1381192191,
+				"active": 4143907071,
+				"title": 255
+			},
+			"options": {
+				"background": 4294967295,
+				"background_hover": 3217014640,
+				"text": 255,
+				"primary": 5534719,
+				"window": 12255231,
+				"inactive": 1381192191,
+				"active": 12189695,
+				"title": 255
+			}
+		}
+	},
+	"classic": {
+		"name": "Classic",
+		"preview": 2444731391,
+		"windows": {}
+	}
+}

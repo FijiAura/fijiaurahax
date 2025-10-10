@@ -2,19 +2,15 @@
 
 #include "base/game_variables.hpp"
 #include "classes/speedhack/speedhackmanagercard.hpp"
-#include "classes/extensions/playlayerext.hpp"
+
+#include "hooks/PlayLayer.hpp"
 
 void GameplaySettingsPopup::keyBackClicked() {
 	this->onClose(nullptr);
 };
 
 void GameplaySettingsPopup::onClose(cocos2d::CCObject*) {
-	if (
-		auto extension_object = geode::cast::typeinfo_cast<PlayLayerExt*>(m_playLayer->getUserObject("hacks"_spr));
-		extension_object != nullptr
-	) {
-		extension_object->updateCheats();
-	}
+	static_cast<CustomPlayLayer*>(m_playLayer)->updateCheats();
 
 	this->setKeyboardEnabled(false);
 	this->removeFromParentAndCleanup(true);
@@ -31,7 +27,7 @@ void GameplaySettingsPopup::onShowPercentage(cocos2d::CCObject*) {
 	auto gm = GameManager::sharedState();
 	gm->toggleGameVariable(GameVariable::SHOW_PERCENTAGE);
 
-	if (auto percent_label = reinterpret_cast<cocos2d::CCLabelBMFont*>(m_playLayer->getChildByID("percentage-label"_spr)); percent_label != nullptr) {
+	if (auto percent_label = static_cast<CustomPlayLayer*>(m_playLayer)->m_fields->m_percentageLabel) {
 		percent_label->setVisible(gm->getGameVariable(GameVariable::SHOW_PERCENTAGE));
 	}
 }
@@ -54,18 +50,19 @@ void GameplaySettingsPopup::onSpeedhackValueChanged(float interval) {
 };
 
 void GameplaySettingsPopup::updateCheatIndicator() {
-	if (auto extension_object = geode::cast::typeinfo_cast<PlayLayerExt*>(m_playLayer->getUserObject("hacks"_spr)); extension_object != nullptr) {
-		auto cheats_enabled = extension_object->determineCheatStatus();
-		auto is_cheating = extension_object->getIsIllegitimate();
 
-		if (cheats_enabled) {
-			m_cheatIndicator->setColor({0xff, 0x00, 0x00});
-			return;
-		} else if (is_cheating) {
-			// this means cheat status will be reset on next attempt
-			m_cheatIndicator->setColor({0xff, 0xaa, 0x00});
-			return;
-		}
+	auto pl = static_cast<CustomPlayLayer*>(m_playLayer);
+
+	auto cheats_enabled = pl->determineCheatStatus();
+	auto is_cheating = pl->m_fields->m_isIllegitimate;
+
+	if (cheats_enabled) {
+		m_cheatIndicator->setColor({0xff, 0x00, 0x00});
+		return;
+	} else if (is_cheating) {
+		// this means cheat status will be reset on next attempt
+		m_cheatIndicator->setColor({0xff, 0xaa, 0x00});
+		return;
 	}
 
 	// all checks passed :)
@@ -225,18 +222,3 @@ bool GameplaySettingsPopup::init() {
 	return true;
 }
 
-void GameplaySettingsPopup::show() {
-	auto targetScene = static_cast<cocos2d::CCScene*>(m_scene);
-	if (!targetScene) {
-		targetScene = cocos2d::CCDirector::sharedDirector()->getRunningScene();
-		m_ZOrder = std::max(targetScene->getHighestChildZ() + 1, 105);
-	}
-
-	if (m_ZOrder == 0) {
-		m_ZOrder = 105;
-	}
-
-	targetScene->addChild(this, m_ZOrder);
-	this->setOpacity(150);
-	this->setVisible(true);
-}

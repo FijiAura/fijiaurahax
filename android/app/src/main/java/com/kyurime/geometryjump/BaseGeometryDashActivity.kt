@@ -99,7 +99,7 @@ open class BaseGeometryDashActivity : AppCompatActivity(), Cocos2dxHelper.Cocos2
         frameLayout.layoutParams = frameLayoutParams
 
         if (ModGlue.isScreenRestricted()) {
-            frameLayout.aspectRatio = 1.86f
+            frameLayout.aspectRatio = 1.77f
         }
 
         val editTextLayoutParams = ViewGroup.LayoutParams(

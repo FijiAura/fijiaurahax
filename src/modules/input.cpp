@@ -123,7 +123,7 @@ struct InputEndLevelLayer : geode::Modify<InputEndLevelLayer, EndLevelLayer> {
 };
 
 struct InputRetryLevelLayer : geode::Modify<InputRetryLevelLayer, RetryLevelLayer> {
-	void RetryLevelLayer_onReplay(RetryLevelLayer* self, cocos2d::CCObject* target) {
+	void onReplay(RetryLevelLayer* self, cocos2d::CCObject* target) {
 		RetryLevelLayer::onReplay(target);
 
 		if (!GameManager::sharedState()->getGameVariable(GameVariable::SHOW_CURSOR)) {

@@ -37,6 +37,7 @@ namespace GameVariable {
 	constexpr auto SHOW_TEXTURE_SETTINGS = "4001";
 	constexpr auto OVERLAY_SPEEDHACK_ENABLED = "4002";
 
+	constexpr auto DISABLE_UPDATE_CHECK = "4076";
 	constexpr auto DISABLE_MENU_MUSIC = "4077";
 	constexpr auto SHOW_INFO_LABEL = "4078";
 	constexpr auto DISABLE_RICH_PRESENCE = "4079";

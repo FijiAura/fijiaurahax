@@ -61,34 +61,19 @@ void SongsSettingsPage::createPage() {
 
 	song_browser_button->setPosition(-((_window_dimensions.width / 2) - 20.0f), -(_window_dimensions.height / 2) + 20.0f);
 
-	auto offset_input = CCTextInputNode::create(100.0f, 50.0f, "Offset", "Thonburi", 24, "bigFont.fnt");
-	this->addChild(offset_input, 4);
-	offset_input->m_delegate = this;
-	offset_input->m_maxLabelLength = 4;
-	offset_input->setAllowedChars("0123456789-");
-	offset_input->setMaxLabelWidth(100.0f);
-	offset_input->setMaxLabelScale(0.6f);
-	offset_input->setLabelPlaceholderScale(0.6f);
-	offset_input->setLabelPlaceholderColor({120, 170, 240 });
+	auto offset_input = geode::TextInput::create(90.0f, "Offset");
 	offset_input->setPosition(width - 60.0f, 9.0f);
-	this->offset_input_ = offset_input;
+	offset_input->setLabel("Music Offset (ms)");
+	offset_input->setCommonFilter(geode::CommonFilter::Int);
+	offset_input->setMaxCharCount(4);
 
-	auto offset_label = cocos2d::CCLabelBMFont::create("Music Offset (ms)", "bigFont.fnt");
-	this->addChild(offset_label);
-	offset_label->setPosition(width - 60.0f, 32.0f);
-	offset_label->setScale(0.35f);
+	this->addChild(offset_input);
+	this->offset_input_ = offset_input;
 
 	auto fmod_engine = FMODAudioEngine::sharedEngine();
 	if (auto time_offset = fmod_engine->m_musicOffset; time_offset != 0) {
 		offset_input->setString(fmt::format("{}", time_offset));
 	}
-
-	auto label_bg = cocos2d::extension::CCScale9Sprite::create(
-			"square02_small.png", cocos2d::CCRect(0.0f, 0.0f, 40.0f, 40.0f));
-	label_bg->setContentSize({ 100.0f, 30.0f });
-	label_bg->setOpacity(100);
-	label_bg->setPosition(width - 60.0f, 9.0f);
-	this->addChild(label_bg);
 }
 
 void SongsSettingsPage::onClose() {
@@ -97,8 +82,8 @@ void SongsSettingsPage::onClose() {
 	}
 
 	// avoiding string based crashes part 2
-	auto offset_string = offset_input_->m_textField->getString();
-	auto offset = std::atoi(offset_string);
+	auto offset_string = offset_input_->getString();
+	auto offset = geode::utils::numFromString<int>(offset_string).unwrapOrDefault();
 
 	FMODAudioEngine::sharedEngine()->m_musicOffset = offset;
 }
@@ -107,7 +92,7 @@ void SongsSettingsPage::onToggleVisibility(bool visible) {
 	ToggleSettingsPage::onToggleVisibility(visible);
 
 	// disable textbox if hidden
-	offset_input_->setTouchEnabled(visible);
+	offset_input_->setEnabled(visible);
 }
 
 void SongsSettingsPage::onSongBrowser(cocos2d::CCObject* /* target */) {

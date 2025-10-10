@@ -1,12 +1,12 @@
 {
-    "geode": "4.7.0",
+    "geode": "4.9.0",
     "gd": {
         "win": "*",
         "mac": "*",
         "android": "*"
     },
     "id": "geode.loader",
-    "version": "4.7.0",
+    "version": "4.9.0",
     "name": "Geode",
     "developer": "Geode Team",
     "description": "The Geode mod loader",

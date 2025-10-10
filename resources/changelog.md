@@ -1,8 +1,31 @@
 # 1.9 GDPS Changelog
 
+## u9.0.4
+
+- Fix bug where levels that start in dual mode may have a broken camera in practice mode
+- Redid percentage label display
+- Resolved some build issues
+
+## u9.0.3
+
+- Changed server base URL
+- Removed sessions
+- Added additional themes to the overlay
+- Added an automatic update check
+- Tweaked send button interactions
+- Speedhack automatically deactivates itself when paused
+- Removed the guideline count limit
+- Changed the aspect ratio of the "Limit Aspect Ratio" option to 16:9
+- Fixed bug where rotated hitboxes may not update during playtest
+- Fixed the display of hitboxes on some devices
+- Fixed save backup on mobile
+- Fixed bug where music library songs would not fetch information
+- Fixed bug where invalid official song ids may crash the game
+- Updated Geode to v4.9.0
+
 ## u9.0.2
 
-- Fixed bug where "Show Hitboxes on Death" may unintentionally activate certain hitboxes 
+- Fixed bug where "Show Hitboxes on Death" may unintentionally activate certain hitboxes
 - Fixed bug where trail icons would not correctly show in achievements
 - Fixed bug where pausing while loading a level may freeze
 - Fixed crash when performing some account actions on mobile

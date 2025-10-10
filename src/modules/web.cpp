@@ -8,6 +8,8 @@
 #include "base/config.hpp"
 #include "base/game_variables.hpp"
 
+#include "classes/managers/tokenmanager.hpp"
+
 namespace {
 	std::string encodeUrlParam(std::string_view str) {
 		std::ostringstream oss;
@@ -61,6 +63,17 @@ std::string getRequestBody(web::WebResponse* res) {
 	}
 
 	return body;
+}
+
+web::WebRequest createBaseRequest() {
+	auto req = web::WebRequest();
+	req.userAgent(Config::USER_AGENT);
+
+	if (auto token = TokenManager::get().getToken(); !token.empty()) {
+		req.header("Authorization", fmt::format("Bearer {}", token));
+	}
+
+	return req;
 }
 
 struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelManager> {
@@ -121,8 +134,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/uploadGJLevel19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		req.bodyString(params);
 
@@ -200,8 +212,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/getGJLevels19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		req.bodyString(params);
 
@@ -228,8 +239,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/getGJMapPacks.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("page={}&gameVersion=19&binaryVersion=25&secret=Wmfd2893gb7", search->m_page);
 		req.bodyString(params);
@@ -257,8 +267,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/downloadGJLevel19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("levelID={}&inc={:d}&extras=0&secret=Wmfd2893gb7", levelId, this->hasDownloadedLevel(levelId));
 		req.bodyString(params);
@@ -287,8 +296,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/downloadGJLevel19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("levelID={}&gameVersion=19&secret=Wmfd2893gb7", levelId);
 		req.bodyString(params);
@@ -326,8 +334,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/rateGJLevel.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("levelID={}&rating={}&secret=Wmfd2893gb7", id, rating);
 		req.bodyString(params);
@@ -363,8 +370,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/rateGJStars.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("levelID={}&rating={}&secret=Wmfd2893gb7", id, rating);
 		req.bodyString(params);
@@ -394,8 +400,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/deleteGJLevelUser19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("udid={}&accountID={}&levelID={}&secret=Wmfv2898gc9",
 			GameManager::sharedState()->m_playerUDID, GJAccountManager::sharedState()->m_accountID, id);
@@ -433,8 +438,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/updateGJUserScore19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto gm = GameManager::sharedState();
 
@@ -502,8 +506,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 			}
 		});
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("type={}&udid={}&accountID={}&count={}&secret=Wmfd2893gb7",
 			type, GameManager::sharedState()->m_playerUDID, GJAccountManager::sharedState()->m_accountID, count);
@@ -532,8 +535,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/getGJComments19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("levelID={}&page={}&userID={}&total={}&secret=Wmfd2893gb7",
 			id, page, GameManager::sharedState()->m_playerUserID, total);
@@ -567,8 +569,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/uploadGJComment19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto udid = GameManager::sharedState()->m_playerUDID;
 		auto accountId = GJAccountManager::sharedState()->m_accountID;
@@ -603,13 +604,12 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/deleteGJComment19.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto udid = GameManager::sharedState()->m_playerUDID;
 		auto accountId = GJAccountManager::sharedState()->m_accountID;
 
-		auto params = fmt::format("udid={}&accountID={}&commentID=%{}&levelID={}&secret=Wmfd2893gb7",
+		auto params = fmt::format("udid={}&accountID={}&commentID={}&levelID={}&secret=Wmfd2893gb7",
 			udid, accountId, comment, id);
 		req.bodyString(params);
 
@@ -646,8 +646,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/likeGJItem.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto udid = GameManager::sharedState()->m_playerUDID;
 		auto accountId = GJAccountManager::sharedState()->m_accountID;
@@ -678,8 +677,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/restoreGJItems.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("udid={}&secret=Wmfd2893gb7", GameManager::sharedState()->m_playerUDID);
 		req.bodyString(params);
@@ -712,8 +710,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/reportGJLevel.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("levelID={}&secret=Wmfd2893gb7", id);
 		req.bodyString(params);
@@ -747,8 +744,7 @@ struct AsyncGameLevelManager : geode::Modify<AsyncGameLevelManager, GameLevelMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/getGJMapPacks.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = "page=0&gameVersion=19&isVerify=1&secret=Wmfd2893gb7";
 		req.bodyString(params);
@@ -848,7 +844,7 @@ struct AsyncMusicDownloadManager : geode::Modify<AsyncMusicDownloadManager, Musi
 			downloadUrl = songObject->m_songUrl;
 			if (downloadUrl == "CUSTOMURL") {
 				auto customSongId = id;
-				if (customSongId > 10000000) {
+				if (customSongId > 20000000) {
 					customSongId -= 10000000;
 				}
 				downloadUrl = fmt::format("https://geometrydashfiles.b-cdn.net/music/{}.ogg", customSongId);
@@ -982,6 +978,12 @@ struct AsyncMusicDownloadManager : geode::Modify<AsyncMusicDownloadManager, Musi
 struct AsyncSongInfoObject : geode::Modify<AsyncSongInfoObject, SongInfoObject> {
 	static SongInfoObject* create(cocos2d::CCDictionary* dict) {
 		auto obj = SongInfoObject::create(dict);
+
+		if (dict->objectForKey("8") && !dict->objectForKey("14")) {
+			// we got this song from gmdprivateserver
+			return obj;
+		}
+
 		if (obj->m_songUrl == "CUSTOMURL") {
 			obj->m_songID += 10000000;
 		}
@@ -1017,8 +1019,7 @@ struct AsyncGJAccountManager : geode::Modify<AsyncGJAccountManager, GJAccountMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/accounts/backupGJAccount.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto udid = GameManager::sharedState()->m_playerUDID;
 
@@ -1076,8 +1077,7 @@ struct AsyncGJAccountManager : geode::Modify<AsyncGJAccountManager, GJAccountMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/accounts/syncGJAccount.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("userName={}&password={}&secret=Wmfv3899gc9", this->m_username, encodeUrlParam(this->m_password));
 		req.bodyString(params);
@@ -1105,8 +1105,7 @@ struct AsyncGJAccountManager : geode::Modify<AsyncGJAccountManager, GJAccountMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/accounts/loginGJAccount.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto udid = GameManager::sharedState()->m_playerUDID;
 
@@ -1136,8 +1135,7 @@ struct AsyncGJAccountManager : geode::Modify<AsyncGJAccountManager, GJAccountMan
 
 		auto url = GDMOD_ENDPOINT_BASE_URL "/accounts/registerGJAccount.php";
 
-		auto req = web::WebRequest();
-		req.userAgent(Config::USER_AGENT);
+		auto req = createBaseRequest();
 
 		auto params = fmt::format("userName={}&password={}&email={}&secret=Wmfv3899gc9", userName, password, email);
 		req.bodyString(params);

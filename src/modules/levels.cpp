@@ -54,7 +54,7 @@ struct CustomLevelTools : geode::Modify<CustomLevelTools, LevelTools> {
 		* 7 - Bossfight
 		* */
 
-		if (audio_id == -1) {
+		if (audio_id <= -1) {
 			return 2;
 		}
 
@@ -62,7 +62,7 @@ struct CustomLevelTools : geode::Modify<CustomLevelTools, LevelTools> {
 				3, 0, 4, 0, 0, 0, 1, 1, 0, 0, 1, 5, 1, 5, 5, 1, 1, 5, 1, 1, 6, 7, 1
 		};
 
-		if (static_cast<std::size_t>(audio_id) > audioArtists.size()) {
+		if (static_cast<std::size_t>(audio_id) >= audioArtists.size()) {
 			return 0;
 		}
 

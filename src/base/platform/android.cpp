@@ -1,87 +1,55 @@
-#include <Geode/cocos/platform/android/jni/JniHelper.h>
-
 #include <fstream>
 
 #include "base/platform_helper.hpp"
 #include "classes/callbacks/levelimportcallback.hpp"
 
+#include <launcher-utils/jni.hpp>
+
 bool PlatformHelper::is_gd_installed() {
-	cocos2d::JniMethodInfo t;
-	auto ret = false;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "isGeometryDashInstalled", "()Z")) {
-		ret = t.env->CallStaticBooleanMethod(t.classID, t.methodID);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<bool>("com/kyurime/geometryjump/ModGlue", "isGeometryDashInstalled", "()Z").unwrapOr(false);
 }
 
 void PlatformHelper::keep_screen_awake() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "keepScreenAwake", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "keepScreenAwake", "()V");
 }
 
 void PlatformHelper::remove_screen_awake() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "removeScreenAwake", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "removeScreenAwake", "()V");
 }
 
 void PlatformHelper::open_texture_picker() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "showTexturePicker", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "showTexturePicker", "()V");
 }
 
 void PlatformHelper::apply_classic_pack() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "applyClassicPack", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "applyClassicPack", "()V");
 }
 
 void PlatformHelper::wipe_textures_directory() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "wipeTexturesDirectory", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "wipeTexturesDirectory", "()V");
 }
 
 namespace {
-void pick_level_export(const std::string& name) {
+void pick_level_export(std::string_view name) {
 	if (name.empty()) {
 		return;
 	}
 
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "onExportLevel", "(Ljava/lang/String;)V")) {
-		auto jname = t.env->NewStringUTF(name.c_str());
-		t.env->CallStaticVoidMethod(t.classID, t.methodID, jname);
+	auto env = launcher_utils::jni::getEnv();
+	if (!env) {
+		return;
 	}
+
+	auto strRef = launcher_utils::jni::toJString(*env, name);
+	if (!strRef) {
+		return;
+	}
+
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "onExportLevel", "(Ljava/lang/String;)V", (*strRef).get());
 }
 
 std::string get_level_export_path() {
-	cocos2d::JniMethodInfo t;
-	std::string ret("");
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "getLevelExportPath", "()Ljava/lang/String;")) {
-		auto str = reinterpret_cast<jstring>(t.env->CallStaticObjectMethod(t.classID, t.methodID));
-		t.env->DeleteLocalRef(t.classID);
-		ret = cocos2d::JniHelper::jstring2string(str);
-		t.env->DeleteLocalRef(str);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<std::string>("com/kyurime/geometryjump/ModGlue", "getLevelExportPath", "()Ljava/lang/String;").unwrapOrDefault();
 }
 }
 
@@ -121,108 +89,41 @@ void PlatformHelper::import_level() {
 }
 
 void PlatformHelper::loaded_to_menu() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "loadedToMenu", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "loadedToMenu", "()V");
 }
 
 std::string PlatformHelper::get_textures_directory() {
-	cocos2d::JniMethodInfo t;
-	std::string ret("");
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "getTexturesDirectory", "()Ljava/lang/String;")) {
-		auto str = reinterpret_cast<jstring>(t.env->CallStaticObjectMethod(t.classID, t.methodID));
-		t.env->DeleteLocalRef(t.classID);
-		ret = cocos2d::JniHelper::jstring2string(str);
-		t.env->DeleteLocalRef(str);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<std::string>("com/kyurime/geometryjump/ModGlue", "getTexturesDirectory", "()Ljava/lang/String;").unwrapOrDefault();
 }
 
 bool PlatformHelper::is_controller_connected() {
-	cocos2d::JniMethodInfo t;
-	auto ret = false;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "isControllerConnected", "()Z")) {
-		ret = t.env->CallStaticBooleanMethod(t.classID, t.methodID);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<bool>("com/kyurime/geometryjump/ModGlue", "isControllerConnected", "()Z").unwrapOr(false);
 }
 
 std::string PlatformHelper::get_secondary_assets_directory() {
-	cocos2d::JniMethodInfo t;
-	std::string ret("");
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "getSecondaryAssetsDirectory", "()Ljava/lang/String;")) {
-		auto str = reinterpret_cast<jstring>(t.env->CallStaticObjectMethod(t.classID, t.methodID));
-		t.env->DeleteLocalRef(t.classID);
-		ret = cocos2d::JniHelper::jstring2string(str);
-		t.env->DeleteLocalRef(str);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<std::string>("com/kyurime/geometryjump/ModGlue", "getSecondaryAssetsDirectory", "()Ljava/lang/String;").unwrapOrDefault();
 }
 
 std::string PlatformHelper::get_save_directory() {
-	cocos2d::JniMethodInfo t;
-	std::string ret("");
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "getSaveDirectory", "()Ljava/lang/String;")) {
-		auto str = reinterpret_cast<jstring>(t.env->CallStaticObjectMethod(t.classID, t.methodID));
-		t.env->DeleteLocalRef(t.classID);
-		ret = cocos2d::JniHelper::jstring2string(str);
-		t.env->DeleteLocalRef(str);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<std::string>("com/kyurime/geometryjump/ModGlue", "getSaveDirectory", "()Ljava/lang/String;").unwrapOrDefault();
 }
 
 bool PlatformHelper::is_launcher_build() {
-	cocos2d::JniMethodInfo t;
-	auto ret = false;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "isLauncherBuild", "()Z")) {
-		ret = t.env->CallStaticBooleanMethod(t.classID, t.methodID);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<bool>("com/kyurime/geometryjump/ModGlue", "isLauncherBuild", "()Z").unwrapOr(false);
 }
 
 bool PlatformHelper::is_screen_restricted() {
-	cocos2d::JniMethodInfo t;
-	auto ret = false;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "isScreenRestricted", "()Z")) {
-		ret = t.env->CallStaticBooleanMethod(t.classID, t.methodID);
-	}
-
-	return ret;
+	return launcher_utils::jni::callStaticMethod<bool>("com/kyurime/geometryjump/ModGlue", "isScreenRestricted", "()Z").unwrapOr(false);
 }
 
 void PlatformHelper::toggle_is_screen_restricted() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "toggleIsScreenRestricted", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "toggleIsScreenRestricted", "()V");
 }
 
 void PlatformHelper::capture_cursor() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "captureCursor", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "captureCursor", "()V");
 }
 
 void PlatformHelper::release_cursor() {
-	cocos2d::JniMethodInfo t;
-
-	if (cocos2d::JniHelper::getStaticMethodInfo(t, "com/kyurime/geometryjump/ModGlue", "releaseCursor", "()V")) {
-		t.env->CallStaticVoidMethod(t.classID, t.methodID);
-	}
+	(void)launcher_utils::jni::callStaticMethod<void>("com/kyurime/geometryjump/ModGlue", "releaseCursor", "()V");
 }

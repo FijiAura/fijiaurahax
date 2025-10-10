@@ -5,6 +5,8 @@
 #include "classes/managers/overlaymanager.hpp"
 #include "base/game_variables.hpp"
 
+#include <imgui-cocos.hpp>
+
 constexpr float DPI_NORMAL_FACTOR = 432.0f;
 
 OverlayManager& OverlayManager::get() {
@@ -12,13 +14,13 @@ OverlayManager& OverlayManager::get() {
 	return _manager_instance;
 }
 
-void OverlayManager::registerOverlay(std::function<void()> overlay) {
-	this->_overlays.push_back(overlay);
-}
-
 void OverlayManager::render() const {
-	for (const auto& overlay : this->_overlays) {
-		overlay();
+	if (_dev_overlay) {
+		_dev_overlay();
+	}
+
+	if (_primary_overlay) {
+		_primary_overlay();
 	}
 }
 
@@ -85,6 +87,8 @@ void OverlayManager::setup() {
 #endif
 
 	_initialized = true;
+
+	ImGuiCocos::get().setVisible(_overlayActive);
 }
 
 void OverlayManager::setScale(float scale) {
@@ -129,9 +133,22 @@ const char* OverlayManager::getKeybindName() {
 
 	auto keyString = cocos2d::CCDirector::sharedDirector()->getKeyboardDispatcher()->keyToString(currentKey);
 	if (keyString == nullptr) {
-		geode::log::info("using unknown keybind: {}", static_cast<int>(currentKey));
+		geode::log::warn("using unknown keybind: {}", static_cast<int>(currentKey));
 		return "Unknown";
 	}
 
 	return keyString;
+}
+
+void OverlayManager::setOverlayActive(bool active) {
+	if (_overlayActive == active) {
+		return;
+	}
+	_overlayActive = active;
+
+	if (!_initialized || _dev_overlay) {
+		return;
+	}
+
+	ImGuiCocos::get().setVisible(active);
 }

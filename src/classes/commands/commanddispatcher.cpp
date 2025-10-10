@@ -2,6 +2,8 @@
 
 #include "base/config.hpp"
 
+#include "classes/managers/tokenmanager.hpp"
+
 namespace {
 	std::string encodeUrlParam(std::string_view str) {
 		std::ostringstream oss;
@@ -67,6 +69,10 @@ void CommandDispatcher::nextCommand() {
 
 	req.bodyString(bodyStr);
 	req.userAgent(Config::USER_AGENT);
+
+	if (auto token = TokenManager::get().getToken(); !token.empty()) {
+		req.header("Authorization", fmt::format("Bearer {}", token));
+	}
 
 	auto task = req.post(GDMOD_ENDPOINT_BASE_URL "/uploadGJComment19.php");
 	m_uploadListener.setFilter(task);

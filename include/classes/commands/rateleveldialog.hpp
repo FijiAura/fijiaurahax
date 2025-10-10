@@ -11,13 +11,15 @@
 #include <optional>
 
 class RateLevelDialog : public FLAlertLayer, public CommandDispatcherProtocol, public TextInputDelegate, public UploadPopupDelegate {
-	GJGameLevel* m_level{nullptr};
+	int m_levelId{};
+	int m_levelVersion{};
 
 	int m_selectedStars{0};
 	int m_selectedRating{0};
 
 	int m_initialStars{0};
 	int m_initialRating{0};
+	int m_initialFeatured{0};
 
 	std::vector<ButtonSprite*> m_starButtons{};
 	cocos2d::CCSprite* m_difficultySprite{nullptr};
@@ -32,6 +34,8 @@ class RateLevelDialog : public FLAlertLayer, public CommandDispatcherProtocol, p
 	cocos2d::CCSprite* m_sendIndicator{nullptr};
 	cocos2d::CCLabelBMFont* m_noStarIndicator{nullptr};
 	bool m_isSend{false};
+
+	std::function<void()> m_onSendCompleted{};
 
 protected:
 	bool init(GJGameLevel*, bool);
@@ -61,6 +65,10 @@ protected:
 	void updateReason(const std::string&);
 
 public:
+	void setSendCallback(std::function<void()> x) {
+		m_onSendCompleted = x;
+	}
+
 	static RateLevelDialog* create(GJGameLevel* level, bool isSend) {
 		auto pRet = new RateLevelDialog();
 		if (pRet && pRet->init(level, isSend)) {

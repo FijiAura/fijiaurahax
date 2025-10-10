@@ -438,10 +438,12 @@ struct CustomAccountLoginLayer : geode::Modify<CustomAccountLoginLayer, AccountL
 // adding this to the bindings creates too many issues. might be the worst looking code in the mod :sob: i'm so sorry
 // disables the whitespace for save data. from my tests, there's a ~33% size reduction so it's worth it
 
+#if defined(GEODE_IS_WINDOWS)
 gd::string (* GEODE_WINDOWS(__thiscall) pugi_save_string_original)(pugi::xml_document*, const char*, unsigned int, pugi::xml_encoding) = nullptr;
 gd::string pugi_save_string(pugi::xml_document* self, const char* indent, unsigned int flags, pugi::xml_encoding encoding) {
 	return pugi_save_string_original(self, indent, pugi::format_raw, encoding);
 }
+#endif
 
 bool (* GEODE_WINDOWS(__thiscall) pugi_save_file_original)(pugi::xml_document*, const char*,const char*, unsigned int, pugi::xml_encoding) = nullptr;
 bool pugi_save_file(pugi::xml_document* self, const char* fname, const char* indent, unsigned int flags, pugi::xml_encoding encoding) {
@@ -449,17 +451,12 @@ bool pugi_save_file(pugi::xml_document* self, const char* fname, const char* ind
 }
 
 $execute {
-	auto stringAddr =
 #if defined(GEODE_IS_WINDOWS)
+	auto stringAddr =
 	GetProcAddress(
 		reinterpret_cast<HMODULE>(geode::base::getCocos()),
 		"?save_string@xml_document@pugi@@QBE?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PBDIW4xml_encoding@2@@Z"
 	);
-#elif defined(GEODE_IS_ANDROID)
-	dlsym(dlopen("libcocos2dcpp.so", RTLD_NOW), "_ZNK4pugi12xml_document11save_stringEPKcjNS_12xml_encodingE");
-#else
-	nullptr;
-#endif
 
 	if (stringAddr == nullptr) {
 		geode::log::warn("failed to hook save_string - fn not found");
@@ -478,6 +475,16 @@ $execute {
 	}
 
 	pugi_save_string_original = reinterpret_cast<decltype(pugi_save_string_original)>(stringAddr);
+#elif defined(GEODE_IS_ANDROID)
+// there was a very evil bug when hooking. patch instead
+	auto p1 = geode::Mod::get()->patch(
+		reinterpret_cast<void*>(geode::base::get() + 0x29c324),
+		{0x04} // pugi::format_raw
+	);
+	if (!p1) {
+		geode::log::warn("failed to patch save_string - {}", p1.unwrapErr());
+	}
+#endif
 
 	auto fileAddr =
 #if defined(GEODE_IS_WINDOWS)

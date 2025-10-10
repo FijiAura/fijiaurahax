@@ -1,5 +1,51 @@
 #include "classes/settings/togglesettingspage.hpp"
 
+void ToggleSettingsPage::addPageIndicator() {
+	auto page_indicator = cocos2d::CCSprite::create("smallDot.png");
+	this->addChild(page_indicator);
+
+	_menu_objects.push_back(page_indicator);
+	_page_indicators.push_back(page_indicator);
+
+	auto indicator_count = _page_indicators.size();
+	auto indicator_size = page_indicator->getScaledContentWidth();
+
+	constexpr auto indicator_padding = 5.0f;
+
+	auto indicators_total = indicator_count * (indicator_size + indicator_padding) - indicator_padding;
+
+	auto width = this->_dimensions.width / 2;
+
+	auto x_pos = width + -(indicators_total / 2);
+	auto y_pos = -25.0f;
+
+	for (auto i : _page_indicators) {
+		i->setPosition({x_pos, y_pos});
+		x_pos += indicator_size + indicator_padding;
+	}
+}
+
+void ToggleSettingsPage::updatePageIndicator() {
+	if (_page_indicators.size() <= 1) {
+		for (auto i : _page_indicators) {
+			i->setVisible(false);
+		}
+
+		return;
+	}
+
+	auto page_counter = 0;
+	for (auto i : _page_indicators) {
+		if (page_counter == _current_page) {
+			i->setColor({0xff, 0xff, 0xff});
+		} else {
+			i->setColor({0xaa, 0xaa, 0xaa});
+		}
+
+		page_counter++;
+	}
+}
+
 void ToggleSettingsPage::addToggle(const char* name, bool default_on, cocos2d::SEL_MenuHandler callback, const char* desc)
 {
 	if (_pages.empty() || _toggle_count >= MAX_TOGGLE_PER_PAGE) {
@@ -23,6 +69,8 @@ void ToggleSettingsPage::addToggle(const char* name, bool default_on, cocos2d::S
 
 			_has_page_counter = true;
 		}
+
+		this->addPageIndicator();
 	}
 
 	auto& current_page = _pages.back();
@@ -101,6 +149,8 @@ void ToggleSettingsPage::onPageNext(cocos2d::CCObject*) {
 	for (const auto& i : newPage) {
 		i->setVisible(true);
 	}
+
+	this->updatePageIndicator();
 }
 
 void ToggleSettingsPage::onInfoText(cocos2d::CCObject* target) {
@@ -135,5 +185,7 @@ void ToggleSettingsPage::onToggleVisibility(bool visible) {
 				i->setVisible(false);
 			}
 		}
+
+		this->updatePageIndicator();
 	}
 }

@@ -29,11 +29,13 @@ void TweaksSettingsPage::createPage()  {
 		static_cast<cocos2d::SEL_MenuHandler>(&ToggleSettingsPage::onToggleVariable<4097>),
 		"Unlocks all built in icons and colors. Will not unlock anything added after U9.");
 
+/*
 	this->addToggle(
 		"Disable Session Creation",
 		gm->getGameVariable(GameVariable::DISABLE_SESSION),
 		static_cast<cocos2d::SEL_MenuHandler>(&ToggleSettingsPage::onToggleVariable<4082>),
 		"Disables the automatic creation of a session, an authentication feature which is required for several online features.");
+*/
 
 #ifdef GEODE_IS_ANDROID
 	this->addToggle(
@@ -56,6 +58,13 @@ void TweaksSettingsPage::createPage()  {
 		static_cast<cocos2d::SEL_MenuHandler>(&TweaksSettingsPage::onToggleRichPresence),
 		"Disables showing your current ingame status through Discord.");
 #endif
+
+	this->addToggle(
+		"Disable update check",
+		gm->getGameVariable(GameVariable::DISABLE_UPDATE_CHECK),
+		static_cast<cocos2d::SEL_MenuHandler>(&ToggleSettingsPage::onToggleVariable<4076>),
+		"Disables the automatic update check during the start of the game."
+	);
 }
 
 #ifdef GEODE_IS_WINDOWS

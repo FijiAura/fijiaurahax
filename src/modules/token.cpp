@@ -2,6 +2,7 @@
 #include <Geode/modify/GJAccountManager.hpp>
 #include <Geode/modify/CreatorLayer.hpp>
 #include <Geode/modify/GameManager.hpp>
+#include <Geode/modify/AccountLoginLayer.hpp>
 
 #include <string>
 
@@ -36,6 +37,14 @@ struct TokenGJAccountManager : geode::Modify<TokenGJAccountManager, GJAccountMan
 	}
 };
 
+struct TokenAccountLoginLayer : geode::Modify<TokenAccountLoginLayer, AccountLoginLayer> {
+	void loginAccountFinished(int accountId, int userId) {
+		TokenManager::get().deleteAuthKey();
+
+		AccountLoginLayer::loginAccountFinished(accountId, userId);
+	}
+};
+
 #ifdef GEODE_IS_WINDOWS
 // GJAccountManager::encodeDataTo is inlined on windows
 struct TokenGameManager : geode::Modify<TokenGameManager, GameManager> {
@@ -51,10 +60,9 @@ struct TokenGameManager : geode::Modify<TokenGameManager, GameManager> {
 struct TokenCreatorLayer : geode::Modify<TokenCreatorLayer, CreatorLayer> {
 	bool init() {
 		auto gm = GameManager::sharedState();
-		auto create_session = !gm->getGameVariable(GameVariable::DISABLE_SESSION);
 		auto am = GJAccountManager::sharedState();
 
-		if (PlatformToolbox::isNetworkAvailable() && create_session && am->m_accountID) {
+		if (am->m_accountID) {
 			auto& tokenManager = TokenManager::get();
 			if (!tokenManager.createdSession()) {
 				TokenManager::get().createSession();

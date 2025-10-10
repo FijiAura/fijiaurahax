@@ -7,7 +7,7 @@
 #endif
 
 #ifndef GDMOD_ENDPOINT_BASE_URL
-#define GDMOD_ENDPOINT_BASE_URL "https://absolllute.com/gdps/gdapi"
+#define GDMOD_ENDPOINT_BASE_URL "https://19gdps.com/gdapi"
 #endif
 
 #include <Geode/Geode.hpp>

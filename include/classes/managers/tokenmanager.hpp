@@ -11,7 +11,7 @@
 
 #include "classes/delegates/sessiondelegate.hpp"
 
-class TokenManager : public cocos2d::CCObject {
+class TokenManager {
   std::string m_token{};
   bool m_createdSession{false};
   std::time_t m_lastSessionTime{0};
@@ -26,8 +26,6 @@ class TokenManager : public cocos2d::CCObject {
 	TokenManager();
 
 public:
-	void init();
-
 	static TokenManager& get();
 
 	void load(DS_Dictionary* dictionary);
@@ -40,6 +38,8 @@ public:
 
 	bool sendingRequest() const;
 	bool createdSession() const;
+
+	std::string getToken() const;
 
 	TokenManager(const TokenManager&) = delete;
 	TokenManager(TokenManager&&) = delete;

@@ -84,45 +84,95 @@ struct SuperLevelInfoLayer : geode::Modify<SuperLevelInfoLayer, LevelInfoLayer> 
 		return;
 	}
 
+	// 1 = show button, 0 = show button but disable, -1 = hide button
+	int canSendLevel(GJGameLevel* level) {
+		if (GJAccountManager::sharedState()->m_accountID == 0) {
+			return -1;
+		}
+
+		auto isMod = GameManager::sharedState()->getGameVariable(GameVariable::IS_MODERATOR);
+		if (isMod) {
+			return 1;
+		}
+
+		if (level->m_ratingsSum > 0) {
+			return -1;
+		}
+
+		auto sendLevelKey = fmt::format("send_{}_{}", level->m_levelID, level->m_levelVersion);
+		if (GameLevelManager::sharedState()->m_valueDict->objectForKey(sendLevelKey)) {
+			return 0;
+		}
+
+		return 1;
+	}
+
 	bool init(GJGameLevel* level) {
 		if (!LevelInfoLayer::init(level)) {
 			return false;
 		}
 
 		if (level->m_objectCount > HIGH_OBJECT_COUNT) {
-			auto nameLabel = this->getChildByType<cocos2d::CCLabelBMFont>(1);
+			auto nameLabel = this->getChildByID("creator-label");
 
-			auto badgeX = nameLabel->getPositionX() + (0.5f * nameLabel->getContentSize().width * nameLabel->getScaleX()) + 12.0f;
-			if (level->m_originalLevel != 0) {
-				badgeX += 18.0f;
+			if (nameLabel) {
+				auto badgeX = nameLabel->getPositionX() + (0.5f * nameLabel->getContentSize().width * nameLabel->getScaleX()) + 12.0f;
+				if (level->m_originalLevel != 0) {
+					badgeX += 18.0f;
+				}
+
+				auto highObjectBadge = cocos2d::CCSprite::createWithSpriteFrameName("highObjectIcon.png"_spr);
+				highObjectBadge->setID("high-object-indicator"_spr);
+				this->addChild(highObjectBadge);
+				highObjectBadge->setPosition({badgeX, nameLabel->getPositionY() - 1.0f});
 			}
-
-			auto highObjectBadge = cocos2d::CCSprite::createWithSpriteFrameName("highObjectIcon.png"_spr);
-			this->addChild(highObjectBadge);
-			highObjectBadge->setPosition({badgeX, nameLabel->getPositionY() - 1.0f});
 		}
 
 		auto leftMenu = this->getChildByID("left-side-menu");
-		if (leftMenu && GJAccountManager::sharedState()->m_accountID != 0) {
-			auto commandsSprite = cocos2d::CCSprite::createWithSpriteFrameName("sendBtn.png"_spr);
-			auto commandsBtn = CCMenuItemSpriteExtra::create(
-				commandsSprite, nullptr, this, static_cast<cocos2d::SEL_MenuHandler>(&SuperLevelInfoLayer::onCommands)
-			);
+		if (leftMenu) {
+			auto canSend = canSendLevel(level);
+			if (canSend >= 0) {
+				auto commandsSprite = cocos2d::CCSprite::createWithSpriteFrameName(canSend <= 0
+					? "sendBtn2.png"_spr
+					: "sendBtn.png"_spr
+				);
+				auto commandsBtn = CCMenuItemSpriteExtra::create(
+					commandsSprite, nullptr, this, static_cast<cocos2d::SEL_MenuHandler>(&SuperLevelInfoLayer::onCommands)
+				);
 
-			leftMenu->addChild(commandsBtn);
-			leftMenu->updateLayout();
+				leftMenu->addChild(commandsBtn);
+				leftMenu->updateLayout();
+
+				if (canSend <= 0) {
+					commandsBtn->setEnabled(false);
+				}
+			}
 		}
 
 		return true;
 	}
 
-	void onCommands(cocos2d::CCObject*) {
-		if (GameStatsManager::sharedState()->getStat("6") < 10) {
-			auto rateDialog = FLAlertLayer::create(nullptr,
+	void onCommands(cocos2d::CCObject* sendBtn) {
+		auto shouldSend = !GameManager::sharedState()->getGameVariable(GameVariable::IS_MODERATOR);
+
+		auto time_left = GameLevelManager::sharedState()->getTimeLeft("send_level", 3600.0f);
+		if (shouldSend && time_left >= 1) {
+			auto ratelimitText = fmt::format("Please wait at least <cl>{} seconds</c> before sending another level!", static_cast<int>(time_left));
+			FLAlertLayer::create(nullptr,
+				"Send Level",
+				ratelimitText.c_str(),
+				"OK", nullptr, 350.0f
+			)->show();
+
+			return;
+		}
+
+		if (shouldSend && GameStatsManager::sharedState()->getStat("6") < 10) {
+			FLAlertLayer::create(nullptr,
 				"Send Level",
 				"You must have at least <cy>10 stars</c> to send levels. This ensures all users of the <cg>send system</c> understand the <cl>rate guidelines</c>.",
 				"OK", nullptr, 350.0f
-			);
+			)->show();
 
 			return;
 		}
@@ -142,8 +192,22 @@ struct SuperLevelInfoLayer : geode::Modify<SuperLevelInfoLayer, LevelInfoLayer> 
 			return;
 		}
 
-		auto shouldSend = !GameManager::sharedState()->getGameVariable(GameVariable::IS_MODERATOR);
-		RateLevelDialog::create(m_level, shouldSend)->show();
+		auto dialog = RateLevelDialog::create(m_level, shouldSend);
+		dialog->setSendCallback([sendBtn]() {
+			if (GameManager::sharedState()->getGameVariable(GameVariable::IS_MODERATOR)) {
+				return;
+			}
+
+			auto btn = static_cast<CCMenuItemSpriteExtra*>(sendBtn);
+
+			btn->setEnabled(false);
+
+			auto commandsSprite = cocos2d::CCSprite::createWithSpriteFrameName("sendBtn2.png"_spr);
+			btn->setNormalImage(commandsSprite);
+			btn->updateSprite();
+		});
+
+		dialog->show();
 	}
 
 	void onLevelInfo(cocos2d::CCObject* target) {
@@ -503,3 +567,63 @@ struct RefreshInfoLayer : geode::Modify<RefreshInfoLayer, InfoLayer> {
 		return true;
 	}
 };
+
+
+#ifdef GEODE_IS_ANDROID
+
+#include <Geode/modify/CCGLProgram.hpp>
+
+struct FixCCGLProgram : geode::Modify<FixCCGLProgram, cocos2d::CCGLProgram> {
+	bool compileShader(GLuint* shader, GLenum type, const GLchar* source) {
+		GLint status;
+
+		if (!source) {
+			return false;
+		}
+
+		// this is somewhat following from the 2.2 code
+		// supposedly the trail bug is simply a default precision issue
+		// robtop likely got it from here: https://github.com/cocos2d/cocos2d-x/pull/19411
+		const GLchar *sources[] = {
+			// (type == GL_VERTEX_SHADER ? "precision highp float;\n" : "precision mediump float;\n"),
+			"#version 100\n precision highp float;\n precision highp int;\n",
+			"uniform mat4 CC_PMatrix;\n"
+			"uniform mat4 CC_MVMatrix;\n"
+			"uniform mat4 CC_MVPMatrix;\n"
+			"uniform vec4 CC_Time;\n"
+			"uniform vec4 CC_SinTime;\n"
+			"uniform vec4 CC_CosTime;\n"
+			"uniform vec4 CC_Random01;\n"
+			"//CC INCLUDES END\n\n",
+			source,
+		};
+
+		*shader = glCreateShader(type);
+		glShaderSource(*shader, sizeof(sources)/sizeof(*sources), sources, nullptr);
+		glCompileShader(*shader);
+
+		glGetShaderiv(*shader, GL_COMPILE_STATUS, &status);
+
+		if (!status) {
+			GLsizei length;
+			glGetShaderiv(*shader, GL_SHADER_SOURCE_LENGTH, &length);
+			GLchar* src = new GLchar[length];
+
+			glGetShaderSource(*shader, length, nullptr, src);
+			CCLOG("cocos2d: ERROR: Failed to compile shader:\n%s", src);
+
+			if (type == GL_VERTEX_SHADER) {
+				CCLOG("cocos2d: %s", vertexShaderLog());
+			} else {
+				CCLOG("cocos2d: %s", fragmentShaderLog());
+			}
+			delete[] src;
+
+			// technically diverging from source, the abort is more annoying
+			return false;
+		}
+		return (status == GL_TRUE);
+	}
+};
+
+#endif

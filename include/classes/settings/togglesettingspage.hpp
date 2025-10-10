@@ -15,12 +15,16 @@ protected:
     std::vector<std::vector<cocos2d::CCNode*>> _pages;
     uint32_t _current_page = 0;
     bool _has_page_counter = false;
+    std::vector<cocos2d::CCSprite*> _page_indicators{};
 
     static constexpr int MAX_TOGGLE_PER_PAGE = 5;
     static constexpr float TOGGLE_SPACING = 45.0f;
 
     void addToggle(const char* name, bool default_on, cocos2d::SEL_MenuHandler callback = nullptr, const char* desc = nullptr);
     void addSpacer(int inc = 1);
+
+    void addPageIndicator();
+    void updatePageIndicator();
 
     float getNextToggleY();
     float getNextToggleMenuY();

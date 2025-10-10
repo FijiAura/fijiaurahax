@@ -36,7 +36,7 @@ void SessionWidget::sessionStatusChanged(const char* message) {
 		statusLabel = "No network available!";
 	} else if (tokenManager.sendingRequest()) {
 		// in process of creating a token
-		statusLabel = "Creating session...";
+		statusLabel = "Logging in...";
 		this->setPositionX(pos_x);
 		this->statusMenu_->setVisible(false);
 	} else if (tokenManager.createdSession()) {
@@ -52,7 +52,7 @@ void SessionWidget::sessionStatusChanged(const char* message) {
 			this->statusLabel_->runAction(fadeSequence);
 		}
 
-		statusLabel = "Session created!";
+		statusLabel = "Successfully logged in!";
 		this->setPositionX(pos_x);
 		this->statusMenu_->setVisible(false);
 	}

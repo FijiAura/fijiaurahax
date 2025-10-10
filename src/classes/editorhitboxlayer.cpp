@@ -110,7 +110,7 @@ void EditorHitboxLayer::drawSlope(GameObject* obj, cocos2d::ccColor4F& color) {
 	}
 
 	if (obj->m_hazardousSlope) {
-		auto slopeMod = cocos2d::CCPoint {0.0f, obj->slopeFloorTop() ? -4.0f : 4.0f};
+		auto slopeMod = cocos2d::CCPoint {0.0f, 4.0f};
 		auto alpha = color.a;
 
 		if (obj->slopeFloorTop()) {
@@ -218,7 +218,6 @@ void EditorHitboxLayer::drawObject(GameObject* obj, int groupFilter) {
 		}
 
 		auto box = obj->getOrientedBox();
-		// this should only be run when the object is actually modified. make that the case
 		if (!_skipHitboxUpdates) {
 			obj->updateOrientedBox();
 		}

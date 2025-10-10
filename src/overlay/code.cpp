@@ -74,5 +74,8 @@ struct OverlayCCKeyboardDispatcher : geode::Modify<OverlayCCKeyboardDispatcher, 
 };
 
 $execute {
-	OverlayManager::get().registerOverlay(&mat_draw);
+    // make the overlay active at start as it does some init during load
+	OverlayManager::get()
+        .registerPrimaryOverlay(&mat_draw)
+        .setOverlayActive(true);
 }

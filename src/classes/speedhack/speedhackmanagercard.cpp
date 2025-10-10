@@ -1,83 +1,20 @@
 #include "classes/speedhack/speedhackmanagercard.hpp"
 
-bool SpeedhackManagerCard::gHackActive_ = false;
-int SpeedhackManagerCard::gLifetimeCounter_ = 0;
-
-float SpeedhackManagerCard::getIntervalForValue(float value) {
-	return (value + 1000.0f) / 1000.0f;
-}
-
-int SpeedhackManagerCard::getSaveValueForInterval(int old_val, int change) {
-	return old_val + change;
-}
-
-void SpeedhackManagerCard::setGlobalTimeScale(float scale) {
-	if (scale == 0.0f) {
-		// reset scale if it's a bad value
-		scale = 1.0f;
-	}
-
-	cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(scale);
-}
-
-void SpeedhackManagerCard::setSpeedhackActive(bool active) {
-	gHackActive_ = active;
-}
-
-void SpeedhackManagerCard::decrementLifetime() {
-	gLifetimeCounter_--;
-	if (gLifetimeCounter_ <= 0) {
-		gLifetimeCounter_ = 0;
-
-		setSpeedhackActive(false);
-		setSpeedhackValue(1.0f);
-	}
-}
-
-void SpeedhackManagerCard::incrementLifetime() {
-	gLifetimeCounter_++;
-
-	auto interval = getSpeedhackInterval();
-
-	setSpeedhackActive(interval != 1.0f && GameManager::sharedState()->getGameVariable(GameVariable::OVERLAY_SPEEDHACK_ENABLED));
-}
+#include "classes/managers/speedhackmanager.hpp"
 
 void SpeedhackManagerCard::setDelegate(SpeedhackCardDelegate* delegate) {
 	this->delegate_ = delegate;
 }
 
-bool SpeedhackManagerCard::isSpeedhackActive() {
-	return gHackActive_;
-}
-
-float SpeedhackManagerCard::getSpeedhackInterval() {
-	auto gm = GameManager::sharedState();
-	auto speedhack_interval = gm->getIntGameVariable(GameVariable::SPEED_INTERVAL);
-
-	return getIntervalForValue(speedhack_interval);
-}
-
-void SpeedhackManagerCard::setSpeedhackValue(float interval) {
-	// nothing wants speedhack
-	if (gLifetimeCounter_ <= 0 || !GameManager::sharedState()->getGameVariable(GameVariable::OVERLAY_SPEEDHACK_ENABLED)) {
-		setSpeedhackActive(false);
-		setGlobalTimeScale(1.0f);
-
-		return;
-	}
-
-	// enables speedhack if interval is not 1
-	setSpeedhackActive(interval != 1.0f);
-	setGlobalTimeScale(interval);
-}
-
 void SpeedhackManagerCard::updateSpeedhackLabel() {
-	auto speedhack_interval = getSpeedhackInterval();
+	auto& speedhackManager = SpeedhackManager::get();
+
+	auto speedhack_interval = speedhackManager.getSpeedhackInterval();
 	auto speedhack_string = fmt::format("{:.2f}x", speedhack_interval);
 
 	optionsLabel_->setString(speedhack_string.c_str(), true);
 
-	setSpeedhackValue(speedhack_interval);
+	speedhackManager.setSpeedhackValue(speedhack_interval);
 
 	auto speedhackEnabled = GameManager::sharedState()->getGameVariable(GameVariable::OVERLAY_SPEEDHACK_ENABLED);
 	if (speedhackEnabled || speedhack_interval == 1.0f) {
@@ -104,7 +41,7 @@ void SpeedhackManagerCard::onBtnDown(cocos2d::CCObject * /* target */) {
 		speedhack_interval = 2000;
 	}
 
-	auto saveValue = getSaveValueForInterval(speedhack_interval, -250);
+	auto saveValue = SpeedhackManager::getSaveValueForInterval(speedhack_interval, -250);
 	saveValue = std::clamp(saveValue, -900, 2000);
 
 	gm->setIntGameVariable(GameVariable::SPEED_INTERVAL, saveValue);
@@ -122,7 +59,7 @@ void SpeedhackManagerCard::onBtnUp(cocos2d::CCObject * /* target */) {
 		speedhack_interval = -1000;
 	}
 
-	auto saveValue = getSaveValueForInterval(speedhack_interval, 250);
+	auto saveValue = SpeedhackManager::getSaveValueForInterval(speedhack_interval, 250);
 	saveValue = std::clamp(saveValue, -900, 2000);
 
 	gm->setIntGameVariable(GameVariable::SPEED_INTERVAL, saveValue);
@@ -168,7 +105,7 @@ bool SpeedhackManagerCard::init() {
 	items_menu->addChild(speedhack_up_btn);
 	speedhack_up_btn->setPositionY(30.0f);
 
-	auto speedhack_interval = getSpeedhackInterval();
+	auto speedhack_interval = SpeedhackManager::get().getSpeedhackInterval();
 	auto speedhack_string = cocos2d::CCString::createWithFormat("%.2fx", speedhack_interval);
 
 	optionsLabel_ = cocos2d::CCLabelBMFont::create(speedhack_string->getCString(), "bigFont.fnt");

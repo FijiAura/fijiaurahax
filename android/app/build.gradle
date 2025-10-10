@@ -40,6 +40,8 @@ android {
             storePassword = properties["storePassword"]
             keyAlias = properties["keyAlias"]
             keyPassword = properties["keyPassword"]
+
+            enableV3Signing = true
         }
     }
     compileSdk 35
@@ -49,8 +51,8 @@ android {
         applicationId "com.kyurime.geometryjump"
         minSdk 23
         targetSdk 35
-        versionCode 41
-        versionName "u9.0.2"
+        versionCode 43
+        versionName "u9.0.4"
 
         vectorDrawables {
             useSupportLibrary true

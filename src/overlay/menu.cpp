@@ -6,6 +6,8 @@
 #include "classes/managers/overlaymanager.hpp"
 #include "base/game_variables.hpp"
 
+#include "hooks/PlayLayer.hpp"
+
 Theme& get_theme() {
 	static Theme theme;
 	return theme;
@@ -29,9 +31,7 @@ void updateOverlayHacks() {
 		return;
 	}
 
-	if (auto extension_object = geode::cast::typeinfo_cast<PlayLayerExt*>(pl->getUserObject("hacks"_spr))) {
-		extension_object->updateCheats();
-	}
+	static_cast<CustomPlayLayer*>(pl)->updateCheats();
 }
 
 Menu::Menu() {
@@ -44,7 +44,10 @@ Menu::Menu() {
 		m_open_key = current_key;
 	}
 
+	ThemeManager::get().init();
+
 	m_windows.emplace_back("Gameplay")
+		.set_theme_id("gameplay")
 		.add(std::make_unique<HackGameVariableMenuItem>("Safe NoClip", GameVariable::IGNORE_DAMAGE))
 		.add(std::make_unique<GameVariableMenuItem>("Practice Music", GameVariable::PRACTICE_MUSIC))
 		.add(std::make_unique<GameVariableMenuItem>("Hitboxes on Death", GameVariable::SHOW_HITBOXES_ON_DEATH))
@@ -55,7 +58,7 @@ Menu::Menu() {
 				return;
 			}
 
-			if (auto percent_label = geode::cast::typeinfo_cast<cocos2d::CCLabelBMFont*>(playLayer->getChildByID("percentage-label"_spr))) {
+			if (auto percent_label = static_cast<CustomPlayLayer*>(playLayer)->m_fields->m_percentageLabel) {
 				percent_label->setVisible(GameManager::sharedState()->getGameVariable(GameVariable::SHOW_PERCENTAGE));
 			}
 		}))
@@ -63,6 +66,7 @@ Menu::Menu() {
 
 #ifdef GEODE_IS_WINDOWS
 	m_windows.emplace_back("FPS Bypass")
+		.set_theme_id("fps_bypass")
 		.add(std::make_unique<RowMenuItem>(
 			std::make_unique<CBGameVariableMenuItem>("Enabled", GameVariable::ENABLE_FPS_BYPASS, [](CBGameVariableMenuItem&) {
 				updateFPSValue();
@@ -72,6 +76,7 @@ Menu::Menu() {
 #endif
 
 	m_windows.emplace_back("Speedhack")
+		.set_theme_id("speedhack")
 		.add(std::make_unique<RowMenuItem>(
 			std::make_unique<CBGameVariableMenuItem>("Enabled", GameVariable::OVERLAY_SPEEDHACK_ENABLED, [](CBGameVariableMenuItem&) {
 				updateSpeedhack();
@@ -80,6 +85,7 @@ Menu::Menu() {
 		));
 
 	m_windows.emplace_back("Options")
+		.set_theme_id("options")
 		.add(std::make_unique<CBButtonMenuItem>(fmt::format("Set Scale: {:.2f}x", scale), [](CBButtonMenuItem& self) {
 			auto currentScale = OverlayManager::get().scale();
 
@@ -101,13 +107,105 @@ Menu::Menu() {
 		.add(std::make_unique<CBButtonMenuItem>("Sort Windows", [](CBButtonMenuItem&) {
 			Menu::get().sort_windows();
 		}))
-		.add(std::move(bind_button));
+		.add(std::move(bind_button))
+		.add(std::make_unique<ThemeMenuItem>());
+
+/*
+	m_windows.emplace_back("Theme")
+		.add(std::make_unique<CBButtonMenuItem>(fmt::format("Select: {}", ThemeManager::get().get_active_window_id()), [](CBButtonMenuItem& self) {
+			auto& theme_manager = ThemeManager::get();
+			auto ids = theme_manager.get_window_ids();
+
+			if (ids.empty()) {
+				self.label = fmt::format("Select unavailable!");
+				return;
+			}
+
+			auto it = std::find(ids.cbegin(), ids.cend(), theme_manager.get_active_window_id());
+
+			auto idx = 0;
+			if (it != ids.cend()) {
+				idx = std::distance(ids.cbegin(), it);
+			}
+
+			idx++;
+			if (idx == ids.size()) {
+				idx = 0;
+			}
+
+			theme_manager.set_active_window_id(ids[idx]);
+
+			self.label = fmt::format("Select: {}", ThemeManager::get().get_active_window_id());
+
+			Menu::get().reload_all();
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Background", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().background = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().background);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Background Hover", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().background_hover = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().background_hover);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Text", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().text = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().text);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Primary", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().primary = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().primary);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Window", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().window = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().window);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Inactive", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().inactive = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().inactive);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Active", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().active = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().active);
+		}))
+		.add(std::make_unique<ColorPickerMenuItem>("Title", [](ColorPickerMenuItem& self) {
+			ThemeManager::get().get_active_window().title = self.getColor();
+		}, [](ColorPickerMenuItem& self) {
+			self.setColor(ThemeManager::get().get_active_window().title);
+		}))
+		.add(std::make_unique<CheckboxMenuItem>("Test On", true))
+		.add(std::make_unique<CheckboxMenuItem>("Test On 2", true))
+		.add(std::make_unique<CheckboxMenuItem>("Test Off", false))
+		.add(std::make_unique<RowMenuItem>(
+			std::make_unique<CBButtonMenuItem>("Reset", [](CBButtonMenuItem&) {
+				ThemeManager::get().reload_themes();
+				Menu::get().reload_all();
+			}),
+			std::make_unique<CBButtonMenuItem>("Copy", [](CBButtonMenuItem&) {
+				auto& base = ThemeManager::get().get_active_window();
+				auto serialized = fmt::format("\"{}\": {}",
+					ThemeManager::get().get_active_window_id(),
+					matjson::Value(base).dump()
+				);
+
+				geode::utils::clipboard::write(serialized);
+			})
+		));
+*/
 }
 
 void Menu::draw_menu() {
 	if (m_leaving) {
 		m_animation_time += ImGui::GetIO().DeltaTime;
 		if (m_animation_time >= m_animation_duration) {
+			OverlayManager::get().setOverlayActive(false);
+
 			return;
 		}
 	}
@@ -159,22 +257,31 @@ void Menu::draw_menu() {
 
 	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0, 0));
 
-	ImGui::PushStyleColor(ImGuiCol_TitleBgActive, Colors::WINDOW);
-	ImGui::PushStyleColor(ImGuiCol_TitleBg, Colors::WINDOW);
-	ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, Colors::WINDOW);
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, Colors::BACKGROUND);
-
-	// for the little window collapse button
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, Colors::BACKGROUND_HOVER);
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, Colors::BACKGROUND_HOVER);
+	auto& theme = get_theme();
+	auto& theme_manager = ThemeManager::get();
 
 	for (auto& window : m_windows) {
+		auto& p = theme_manager.theme_for_id(std::string(window.theme_id()));
+		theme.colors = p;
+
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, theme.colors.window);
+		ImGui::PushStyleColor(ImGuiCol_TitleBg, theme.colors.window);
+		ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed, theme.colors.window);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, theme.colors.background);
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, theme.colors.background);
+
+		ImGui::PushStyleColor(ImGuiCol_Text, theme.colors.text);
+
+		// for the little window collapse button
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, theme.colors.background_hover);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, theme.colors.background_hover);
+
 		window.draw();
+
+		ImGui::PopStyleColor(8);
 	}
 
-	ImGui::PopStyleColor(6);
 	ImGui::PopStyleVar(5);
-
 	ImGui::PopFont();
 
 	if (just_opened) {
@@ -252,6 +359,8 @@ void Menu::toggle() {
 	if (!m_open) {
 		this->leave_effect();
 	} else {
+		OverlayManager::get().setOverlayActive(true);
+
 		for (auto& window : m_windows) {
 			window.load();
 		}

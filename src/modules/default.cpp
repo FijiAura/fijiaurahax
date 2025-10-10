@@ -24,6 +24,8 @@
 #include "classes/managers/overlaymanager.hpp"
 #endif
 
+#include "classes/managers/updatemanager.hpp"
+
 using namespace geode::prelude;
 
 namespace {
@@ -69,7 +71,7 @@ struct CustomMenuLayer : geode::Modify<CustomMenuLayer, MenuLayer> {
 	}
 
 	void onToolsPage(cocos2d::CCObject*) {
-		cocos2d::CCApplication::sharedApplication()->openURL("http://absolllute.com/tool");
+		cocos2d::CCApplication::sharedApplication()->openURL(GDMOD_ENDPOINT_BASE_URL "/tools");
 	}
 
 	void onSpecialThanks(cocos2d::CCObject*) {
@@ -119,6 +121,21 @@ This allows the GDPS to stay up and also supports the development of the main ga
 		director->replaceScene(fadeScene);
 	}
 #endif
+
+	void showNewUpdate() {
+		auto& updateManager = UpdateManager::get();
+		auto updateData = updateManager.latestUpdate();
+		if (updateData) {
+			auto msg = fmt::format("A new <co>1.9 GDPS</c> update, <cl>{}</c>, is available!", UpdateManager::formatVersion(updateData->versionTag));
+
+			auto downloadUrl = updateData->downloadUrl;
+			geode::createQuickPopup("Update Available", msg, "OK", "Download", [downloadUrl](auto, bool btn2) {
+				if (btn2) {
+					cocos2d::CCApplication::sharedApplication()->openURL(downloadUrl.c_str());
+				}
+			});
+		}
+	}
 
 	bool init() override {
 		if (!MenuLayer::init()) {
@@ -210,6 +227,21 @@ This allows the GDPS to stay up and also supports the development of the main ga
 		social_menu->setPositionY(social_menu->getPositionY() + 20.0f);
 
 		PlatformHelper::loaded_to_menu();
+
+		auto& updateManager = UpdateManager::get();
+		updateManager.beginUpdateCheck();
+
+		if (updateManager.hasUpdate()) {
+			static auto shownUpdate = false;
+
+			if (!shownUpdate) {
+				geode::Loader::get()->queueInMainThread([this] {
+					showNewUpdate();
+				});
+				shownUpdate = true;
+			}
+		}
+
 		return true;
 	}
 };
@@ -267,12 +299,12 @@ struct CustomLoadingLayer : geode::Modify<CustomLoadingLayer, LoadingLayer> {
 		return messages[chosen_index];
 	}
 
-#ifdef GEODE_IS_WINDOWS
 	bool init(bool p1) {
 		if (!LoadingLayer::init(p1)) {
 			return false;
 		}
 
+#ifdef GEODE_IS_WINDOWS
 		auto director = cocos2d::CCDirector::sharedDirector();
 
 		auto overlayText = fmt::format("Press {} to open the overlay!", OverlayManager::getKeybindName());
@@ -312,10 +344,12 @@ struct CustomLoadingLayer : geode::Modify<CustomLoadingLayer, LoadingLayer> {
 		});
 		overlayBg->setScale(bgScale);
 		overlayBg->setID("overlay-keybind-bg"_spr);
+#endif
+
+		UpdateManager::get().beginUpdateCheck();
 
 		return true;
 	}
-#endif
 };
 
 struct CustomLevelPage : geode::Modify<CustomLevelPage, LevelPage> {

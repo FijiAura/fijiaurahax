@@ -60,6 +60,17 @@ $execute {
 		reinterpret_cast<void*>(geode::base::get() + 0x1EBB9C),
 		{0xC3, 0xE7}
 	);
+
+	// guideline count
+	(void)geode::Mod::get()->patch(
+		reinterpret_cast<void*>(geode::base::get() + 0x1ad760),
+		{0x07, 0xe0}
+	);
+
+	(void)geode::Mod::get()->patch(
+		reinterpret_cast<void*>(geode::base::get() + 0x1ad51c),
+		{0x08, 0xe0}
+	);
 #elif defined(GEODE_IS_WINDOWS)
 	// original constant = 0x476A6000 => 60000.0f
 	(void)geode::Mod::get()->patch(
@@ -92,6 +103,17 @@ $execute {
 	(void)geode::Mod::get()->patch(
 		reinterpret_cast<void*>(geode::base::get() + 0x48eda),
 		{0xeb, 0x0a}
+	);
+
+	// guideline max count
+	(void)geode::Mod::get()->patch(
+		reinterpret_cast<void*>(geode::base::get() + 0x2c6ec),
+		{0xeb, 0x15}
+	);
+
+	(void)geode::Mod::get()->patch(
+		reinterpret_cast<void*>(geode::base::get() + 0x2c8f0),
+		{0x90, 0x90}
 	);
 #else
 #error Missing patches (editor length bypass)

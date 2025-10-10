@@ -10,9 +10,9 @@
 
 #include "classes/settings/togglesettingspage.hpp"
 
-class SongsSettingsPage : public ToggleSettingsPage, TextInputDelegate {
+class SongsSettingsPage : public ToggleSettingsPage {
 private:
-    CCTextInputNode* offset_input_{nullptr};
+    geode::TextInput* offset_input_{nullptr};
 public:
     void createPage() override;
     void onClose() override;

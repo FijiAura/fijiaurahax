@@ -11,7 +11,7 @@ Beyond the libraries used by the [Geode SDK](https://geode-sdk.org/), this mod d
  * [gd-imgui-cocos](https://github.com/qimiko/gd-imgui-cocos)
  * [Dear ImGui](https://github.com/ocornut/imgui)
  * [freetype](https://github.com/freetype/freetype)
- * [discord-rpc](https://github.com/discord/discord-rpc)
+ * [discord-presence](https://github.com/EclipseMenu/discord-presence)
  * [pugixml](https://github.com/zeux/pugixml)
 
 **Special thanks** to all of the testers over the years! :)

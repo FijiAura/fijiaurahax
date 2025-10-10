@@ -1,5 +1,5 @@
 {
-    "geode": "4.7.0",
+    "geode": "4.9.0",
     "gd": {
         "android": "1.920",
         "win": "1.920"
@@ -38,7 +38,8 @@
             "level_22",
             "level_23",
             "outfits.json",
-            "muli-sb.ttf"
+            "muli-sb.ttf",
+            "overlay-themes.json"
         ],
         "sprites": [
             "splash.png",

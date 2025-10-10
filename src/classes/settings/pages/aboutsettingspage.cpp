@@ -2,21 +2,7 @@
 
 #include <Geode/ui/GeodeUI.hpp>
 
-// someone forgot to export this and it's too late to fix it
-namespace {
-std::string VersionTag_toSuffixString(const geode::VersionTag& tag) {
-	std::string res = "";
-	switch (tag.value) {
-		case geode::VersionTag::Alpha: res += "-alpha"; break;
-		case geode::VersionTag::Beta: res += "-beta"; break;
-		case geode::VersionTag::Prerelease: res += "-prerelease"; break;
-	}
-	if (tag.number) {
-		res += "." + std::to_string(tag.number.value());
-	}
-	return res;
-}
-}
+#include "classes/managers/updatemanager.hpp"
 
 void AboutSettingsPage::createPage() {
 	const float width = this->_dimensions.width;
@@ -27,16 +13,7 @@ void AboutSettingsPage::createPage() {
 
 	auto version = geode::Mod::get()->getVersion();
 
-	auto versionString = fmt::format("1.9 GDPS u{}.{}", version.getMajor(), version.getMinor());
-
-	auto tag = version.getTag();
-	if (version.getPatch() != 0 || tag) {
-		versionString += fmt::format(".{}", version.getPatch());
-	}
-
-	if (tag) {
-		versionString += VersionTag_toSuffixString(*tag);
-	}
+	auto versionString = fmt::format("1.9 GDPS {}", UpdateManager::formatVersion(version));
 
 	auto title = cocos2d::CCLabelBMFont::create(versionString.c_str(), "bigFont.fnt");
 	internal_layer->addChild(title);

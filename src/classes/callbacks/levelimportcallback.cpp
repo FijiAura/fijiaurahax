@@ -39,19 +39,27 @@ void importLevelInner(pugi::xml_document&& doc) {
 	// plist parsing, tinyxml style
 	// there's no validation on this at all. enjoy
 
+	// old style gmd: <d>{level_content}</d>
 	auto document = doc.child("d");
 	if (!document) {
-		geode::Loader::get()->queueInMainThread([]() {
-			FLAlertLayer::create(
-				nullptr,
-				"Import Failed",
-				"The latest version of gmd files is not supported. "
-				"Only levels exported from the 1.9 client can be imported.",
-				"OK",
-				nullptr
-			)->show();
-		});
-		return;
+		// if not found, check for new style <plist><dict>{level_content}</dict></plist>
+		document = doc.child("plist");
+		if (document) {
+			document = document.child("dict");
+		}
+
+		if (!document) {
+			geode::Loader::get()->queueInMainThread([]() {
+				FLAlertLayer::create(
+					nullptr,
+					"Import Failed",
+					"The provided file was <cr>not</c> a valid level.",
+					"OK",
+					nullptr
+				)->show();
+			});
+			return;
+		}
 	}
 
 	auto level = GameLevelManager::sharedState()->createNewLevel();
@@ -87,8 +95,8 @@ void importLevelInner(pugi::xml_document&& doc) {
 			} else if (strcmp(key, "k3") == 0) {
 				// undo the double encode
 				auto unencodedDesc = value.get();
-				auto desc = geode::utils::base64::decodeString(unencodedDesc).andThen([](const auto& d) {
-					return geode::utils::base64::decodeString(d);
+				auto desc = geode::utils::base64::decodeString(unencodedDesc).map([](const auto& d) {
+					return geode::utils::base64::decodeString(d).unwrapOr(d);
 				}).unwrapOr(unencodedDesc);
 				level->m_levelDesc = desc;
 			} else if (strcmp(key, "k4") == 0) {

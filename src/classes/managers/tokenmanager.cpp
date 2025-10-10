@@ -2,7 +2,7 @@
 
 #include "base/config.hpp"
 
-TokenManager::TokenManager() : cocos2d::CCObject() {}
+TokenManager::TokenManager() {}
 
 TokenManager& TokenManager::get() {
 	static TokenManager _managerInstance;
@@ -15,11 +15,13 @@ void TokenManager::load(DS_Dictionary* dictionary) {
 		this->m_token = string_obj;
 	}
 
+/*
 	auto time_string_obj = dictionary->getStringForKey("GJAExt_004");
 	if (!time_string_obj.empty()) {
 		auto lst = std::strtoul(time_string_obj.c_str(), nullptr, 0);
 		this->m_lastSessionTime = lst;
 	}
+*/
 }
 
 void TokenManager::save(DS_Dictionary* dictionary) {
@@ -29,9 +31,11 @@ void TokenManager::save(DS_Dictionary* dictionary) {
 
 	dictionary->setStringForKey("GJAExt_003", this->m_token);
 
+/*
 	auto session_time_obj = std::to_string(this->m_lastSessionTime);
 
 	dictionary->setStringForKey("GJAExt_004", session_time_obj);
+*/
 }
 
 void TokenManager::deleteAuthKey() {
@@ -57,7 +61,6 @@ void TokenManager::deleteAuthKey() {
 		if (auto res = e->getValue()) {
 			auto jsonRes = res->json();
 			if (!jsonRes) {
-				geode::log::info("Invalid authkey response");
 				if (auto delegate = this->m_sessionDelegate) {
 					delegate->onSessionFailed("Invalid server response for deletion");
 				}
@@ -70,7 +73,6 @@ void TokenManager::deleteAuthKey() {
 
 			if (!success) {
 				auto reason = json.get<std::string>("error").unwrapOr("Unknown error");
-				geode::log::info("authkey deletion failed: {}", reason);
 
 				if (auto delegate = this->m_sessionDelegate) {
 					delegate->onSessionFailed(reason.c_str());
@@ -78,10 +80,6 @@ void TokenManager::deleteAuthKey() {
 
 				return;
 			}
-
-			this->m_token.clear();
-			this->m_createdSession = false;
-			this->m_lastSessionTime = 0;
 
 			// silly response, but it's only used once so whatever
 			if (auto delegate = this->m_sessionDelegate) {
@@ -100,6 +98,11 @@ void TokenManager::deleteAuthKey() {
 	this->m_isSendingReq = true;
 
 	m_listener.setFilter(req.post(GDMOD_ENDPOINT_BASE_URL "/api/logout"));
+
+	// we just assume it cleared anyways, no big deal
+	this->m_token.clear();
+	this->m_createdSession = false;
+	this->m_lastSessionTime = 0;
 }
 
 void TokenManager::createAuthKey() {
@@ -170,6 +173,7 @@ void TokenManager::createSession() {
 		return this->createAuthKey();
 	}
 
+/*
 	this->m_listener.bind([this](geode::utils::web::WebTask::Event* e) {
 		if (e->getProgress()) {
 			return;
@@ -222,6 +226,14 @@ void TokenManager::createSession() {
 	this->m_isSendingReq = true;
 
 	m_listener.setFilter(req.post(GDMOD_ENDPOINT_BASE_URL "/api/session"));
+*/
+
+	this->m_createdSession = true;
+	this->m_lastSessionTime = std::time(nullptr);
+
+	if (auto delegate = this->m_sessionDelegate) {
+		delegate->onSessionCreated();
+	}
 }
 
 void TokenManager::setSessionDelegate(SessionDelegate* delegate) {
@@ -233,5 +245,22 @@ bool TokenManager::sendingRequest() const {
 }
 
 bool TokenManager::createdSession() const {
+/*
+	if (!this->m_createdSession) {
+		return false;
+	}
+
+	auto currentTime = std::time(nullptr);
+	auto sessionEndTime = m_lastSessionTime + 86400u; // define 24h expiration
+
+	if (currentTime >= sessionEndTime) {
+		return false;
+	}
+*/
+
 	return this->m_createdSession;
+}
+
+std::string TokenManager::getToken() const {
+	return this->m_token;
 }

@@ -5,7 +5,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(aurav2)
-set(aurav2_VERSION 9.0.2)
+set(aurav2_VERSION 9.0.4)
 set(GEODE_MOD_ID zmx.aura)
 
 option(GDMOD_ENABLE_DEV_OVERLAY "Enable ImGui and logging constants" OFF)
@@ -29,6 +29,8 @@ set(GDMOD_SOURCES
   src/classes/managers/overlaymanager.cpp
   src/classes/managers/tokenmanager.cpp
   src/classes/managers/secretmanager.cpp
+  src/classes/managers/updatemanager.cpp
+  src/classes/managers/speedhackmanager.cpp
   src/classes/speedhack/speedhackmanagercard.cpp
   src/classes/settings/settingspage.cpp
   src/classes/settings/togglesettingspage.cpp
@@ -43,7 +45,6 @@ set(GDMOD_SOURCES
   src/classes/settings/pages/graphicssettingspage.cpp
   src/classes/commands/rateleveldialog.cpp
   src/classes/commands/commanddispatcher.cpp
-  src/classes/extensions/playlayerext.cpp
   src/modules/default.cpp
   src/modules/levels.cpp
   src/modules/hacks.cpp
@@ -64,9 +65,12 @@ set(GDMOD_SOURCES
   src/hooks/EditorPauseLayer.cpp
   src/hooks/EditorUI.cpp
   src/hooks/ColorSelectPopup.cpp
+  src/hooks/PlayLayer.cpp
+  src/hooks/LevelEditorLayer.cpp
   src/overlay/code.cpp
   src/overlay/items.cpp
   src/overlay/menu.cpp
+  src/overlay/theme.cpp
 )
 
 if (ANDROID)
@@ -141,13 +145,18 @@ target_link_libraries(aurav2 pugixml)
 CPMAddPackage(
   NAME gd-imgui-cocos
   GITHUB_REPOSITORY qimiko/gd-imgui-cocos
-  GIT_TAG 083e6072e80f55572c07412619ce414b09ea57ee
+  GIT_TAG 52efc7f6abb3558b00f7d4f8a7218ae6c039774f
   OPTIONS "ENABLE_FREETYPE ON"
 )
 target_link_libraries(aurav2 imgui-cocos)
 
+if (ANDROID)
+  CPMAddPackage("gh:qimiko/launcher-utils#16238b6dc095b434a9f5a9710d93bfdb6911bde9")
+  target_link_libraries(aurav2 launcher-utils)
+endif()
+
 if (WIN32)
-  CPMAddPackage("gh:qimiko/discord-presence#9ea90322a20a43b02e1f7d630e0e6b24a26329c5")
+  CPMAddPackage("gh:EclipseMenu/discord-presence#a4646fb809d5f49bc6c2a7219138618ffb8cbcc7")
   target_link_libraries(aurav2 discord-rpc)
 endif()
 

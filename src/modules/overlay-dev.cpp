@@ -346,6 +346,11 @@ void imgui_draw_vars_window() {
 			gm->toggleGameVariable(GameVariable::ALL_ICON_BYPASS);
 		}
 #endif
+
+		auto mod_val = gm->getGameVariable(GameVariable::IS_MODERATOR);
+		if (ImGui::Checkbox("Moderator", &mod_val)) {
+			gm->toggleGameVariable(GameVariable::IS_MODERATOR);
+		}
 	}
 
 	ImGui::End();
@@ -723,5 +728,7 @@ struct OverlayCCScheduler : geode::Modify<OverlayCCScheduler, cocos2d::CCSchedul
 };
 
 $execute {
-	OverlayManager::get().registerOverlay(&dev_imgui_tick);
+	OverlayManager::get()
+		.registerDevOverlay(&dev_imgui_tick)
+		.setOverlayActive(true);
 }

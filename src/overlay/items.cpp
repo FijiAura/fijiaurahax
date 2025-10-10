@@ -6,10 +6,12 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 #include "classes/managers/overlaymanager.hpp"
-#include "classes/speedhack/speedhackmanagercard.hpp"
+#include "classes/managers/speedhackmanager.hpp"
 
 void Window::draw() {
-	ImGui::SetNextWindowSize(ImVec2(get_theme().width, -1));
+	auto& theme = get_theme();
+
+	ImGui::SetNextWindowSize(ImVec2(theme.width, -1));
 	if (m_dirty_position) {
 		if (m_animating) {
 			const auto easing = [](float x) {
@@ -33,11 +35,18 @@ void Window::draw() {
 	}
 
 	// PushID doesnt seem to work with windows
+
+	ImGui::PushStyleColor(ImGuiCol_Text, theme.colors.title);
+
 	if (ImGui::Begin(fmt::format("{}##{}", m_name, static_cast<void*>(this)).c_str(), nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar)) {
+		ImGui::PopStyleColor(1);
 		for (auto& item : m_items) {
 			item->render();
 		}
+	} else {
+		ImGui::PopStyleColor(1);
 	}
+
 	m_open = !ImGui::IsWindowCollapsed();
 
 	m_pos = ImGui::GetWindowPos();
@@ -49,7 +58,9 @@ void Window::draw() {
 void CheckboxMenuItem::render() {
 	auto draw = ImGui::GetWindowDrawList();
 
-	const auto height = get_theme().height;
+	auto& theme = get_theme();
+
+	const auto height = theme.height;
 
 	if (ImGui::InvisibleButton(this->label.c_str(), ImVec2(-1, height))) {
 		this->value = !this->value;
@@ -66,17 +77,19 @@ void CheckboxMenuItem::render() {
 
 	if (this->value) {
 		// TODO: hardcoded colors D:
-		draw->AddRectFilled(item_min, item_max, rgba(0x264e3820));
+		auto colBg = mixRGB(theme.colors.active, theme.colors.background, 0x20);
+		draw->AddRectFilled(item_min, item_max, colBg);
+
+		auto colRight = mixRGB(theme.colors.active, theme.colors.background, 0x50);
 		draw->AddRectFilledMultiColor(ImVec2(item_min.x + width * 0.56f, item_min.y), item_max,
-			rgba(0), rgba(0x264e3850),
-			rgba(0x264e3850), rgba(0)
+			colBg, colRight, colRight, colBg
 		);
 	}
 	if (hovering) {
-		draw->AddRectFilled(item_min, item_max, Colors::BACKGROUND_HOVER);
+		draw->AddRectFilled(item_min, item_max, theme.colors.background_hover);
 	}
-	draw->AddText(item_min + ImVec2(5, height / 2.f - text_size.y / 2.f), this->value ? Colors::PRIMARY : Colors::TEXT, this->label.c_str());
-	draw->AddRectFilled(ImVec2(item_max.x - (6 * OverlayManager::get().scale()), item_min.y + 3), item_max - ImVec2(3, 3), this->value ? Colors::PRIMARY : Colors::INACTIVE);
+	draw->AddText(item_min + ImVec2(5, height / 2.f - text_size.y / 2.f), this->value ? theme.colors.primary : theme.colors.text, this->label.c_str());
+	draw->AddRectFilled(ImVec2(item_max.x - (6 * OverlayManager::get().scale()), item_min.y + 3), item_max - ImVec2(3, 3), this->value ? theme.colors.primary : theme.colors.inactive);
 
 	if (false) {
 		// checkmark
@@ -88,7 +101,7 @@ void CheckboxMenuItem::render() {
 			ImVec2(0.90f, 0.14f) * check_height + check_origin,
 		};
 		if (this->value)
-			draw->AddPolyline(points, 3, this->value ? Colors::PRIMARY : Colors::INACTIVE, 0, 3.0f);
+			draw->AddPolyline(points, 3, this->value ? theme.colors.primary : theme.colors.inactive, 0, 3.0f);
 	}
 }
 
@@ -105,19 +118,20 @@ void ButtonMenuItem::render() {
 
 	const auto text_size = ImGui::CalcTextSize(label.c_str());
 
+	auto& theme = get_theme();
 	if (hovering) {
-		draw->AddRectFilled(item_min, item_max, Colors::BACKGROUND_HOVER);
+		draw->AddRectFilled(item_min, item_max, theme.colors.background_hover);
 	}
-	draw->AddText((item_min + item_max) / 2.0f - text_size / 2.f, Colors::TEXT, this->label.c_str());
+	draw->AddText((item_min + item_max) / 2.0f - text_size / 2.f, theme.colors.text, this->label.c_str());
 }
 
 void InputMenuItem::render() {
-	auto draw = ImGui::GetWindowDrawList();
+	auto& theme = get_theme();
 
 	ImGui::SetNextItemWidth(-1);
 
 	ImGui::PushID(this);
-	ImGui::PushStyleColor(ImGuiCol_FrameBg, Colors::BACKGROUND_HOVER);
+	ImGui::PushStyleColor(ImGuiCol_FrameBg, theme.colors.background_hover);
 
 	this->render_input();
 
@@ -170,7 +184,7 @@ void FPSInputMenuItem::render_input() {
 
 void updateSpeedhack() {
 	auto currentInterval = (GameManager::sharedState()->getIntGameVariable(GameVariable::SPEED_INTERVAL) + 1000.0f) / 1000.0f;
-	SpeedhackManagerCard::setSpeedhackValue(currentInterval);
+	SpeedhackManager::get().setSpeedhackValue(currentInterval);
 
 	updateOverlayHacks();
 }
@@ -215,4 +229,153 @@ void RowMenuItem::render() {
 		ImGui::EndTable();
 	}
 	ImGui::PopID();
+}
+
+void ColorPickerMenuItem::render() {
+	auto draw = ImGui::GetWindowDrawList();
+
+	auto& theme = get_theme();
+
+	ImGui::NewLine();
+
+	auto width_offset = theme.width - theme.height;
+	ImGui::SameLine(width_offset);
+
+	if (ImGui::ColorEdit3(label.c_str(), &m_color.x, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+		this->m_cb(*this);
+	}
+
+	const auto item_min = ImGui::GetItemRectMin();
+	const auto item_max = ImGui::GetItemRectMax();
+
+	const auto text_size = ImGui::CalcTextSize(label.c_str());
+
+	draw->AddText(item_min + ImVec2(5 - width_offset, theme.height / 2.f - text_size.y / 2.f), theme.colors.text, this->label.c_str());
+}
+
+void ComboMenuItem::set_selected_id(std::string x) {
+	m_selected_id = x;
+
+	auto it = std::find_if(m_items.begin(), m_items.end(), [&x](const auto& p) {
+		return p.id == x;
+	});
+
+	if (it != m_items.end()) {
+		m_selected_name = fmt::format("{}: {}", label, it->label);
+	}
+}
+
+void ComboMenuItem::draw_select_button(std::string id, std::string label, bool selected, std::uint32_t preview_color) {
+	auto draw = ImGui::GetWindowDrawList();
+
+	auto& theme = get_theme();
+
+	const auto height = theme.height;
+
+	if (ImGui::InvisibleButton(label.c_str(), ImVec2(-1, height)) && !selected) {
+		this->on_select(id);
+	}
+
+	const bool hovering = ImGui::IsItemHovered();
+	const auto item_min = ImGui::GetItemRectMin();
+	const auto item_max = ImGui::GetItemRectMax();
+	const auto item_mid = (item_min + item_max) / 2.f;
+
+	const float width = item_max.x - item_min.x;
+
+	const auto text_size = ImGui::CalcTextSize(label.c_str());
+
+	draw->AddRectFilled(item_min, item_max, theme.colors.background);
+
+	const auto scale = OverlayManager::get().scale();
+	const auto preview_square_pad = 4.0f * scale;
+
+	if (selected) {
+		auto colBg = mixRGB(theme.colors.active, theme.colors.background, 0x20);
+		draw->AddRectFilled(item_min, item_max, colBg);
+
+		auto colRight = mixRGB(theme.colors.active, theme.colors.background, 0x50);
+		draw->AddRectFilledMultiColor(ImVec2(item_min.x + width * 0.56f, item_min.y), item_max,
+			colBg, colRight, colRight, colBg
+		);
+	}
+	if (hovering) {
+		draw->AddRectFilled(item_min, item_max, theme.colors.background_hover);
+	}
+
+	if (preview_color) {
+		draw->AddRectFilled(
+			ImVec2(item_min.x + preview_square_pad, item_min.y + preview_square_pad),
+			ImVec2(item_min.x + height - preview_square_pad, item_max.y - preview_square_pad),
+			preview_color
+		);
+	}
+
+	auto text_offset = preview_color ? height - preview_square_pad : 0;
+	draw->AddText(item_min + ImVec2(7.0f * scale + text_offset, height / 2.f - text_size.y / 2.f), selected ? theme.colors.primary : theme.colors.text, label.c_str());
+	draw->AddRectFilled(ImVec2(item_max.x - (6 * scale), item_min.y + 3), item_max - ImVec2(3, 3), selected ? theme.colors.primary : theme.colors.inactive);
+}
+
+void ComboMenuItem::render() {
+	ImGui::SetNextItemWidth(-1);
+
+	auto& theme = get_theme();
+
+	ImGui::PushStyleColor(ImGuiCol_PopupBg, 0);
+
+	ImGui::PushStyleColor(ImGuiCol_FrameBg, theme.colors.background);
+	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, 0);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize, 0);
+
+	bool combo_open = false;
+	if (ImGui::BeginCombo(fmt::format("##{}", label).c_str(), "", ImGuiComboFlags_NoArrowButton)) {
+		combo_open = true;
+
+		for (const auto& item : m_items) {
+			auto is_selected = item.id == m_selected_id;
+			this->draw_select_button(item.id, item.label, is_selected, item.preview_color);
+
+			if (is_selected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	ImGui::PopStyleVar(1);
+	ImGui::PopStyleColor(3);
+
+	auto draw = ImGui::GetWindowDrawList();
+
+	const bool hovering = ImGui::IsItemHovered();
+	const auto item_min = ImGui::GetItemRectMin();
+	const auto item_max = ImGui::GetItemRectMax();
+
+	const auto text_size = ImGui::CalcTextSize(m_selected_name.c_str());
+
+	if (hovering || combo_open) {
+		draw->AddRectFilled(item_min, item_max, theme.colors.background_hover);
+	}
+	draw->AddText((item_min + item_max) / 2.0f - text_size / 2.f, theme.colors.text, m_selected_name.c_str());
+}
+
+void ThemeMenuItem::on_select(std::string id) {
+	ThemeManager::get().set_active_theme_id(id);
+
+	Menu::get().reload_all();
+}
+
+void ThemeMenuItem::load() {
+	auto& theme_manager = ThemeManager::get();
+	auto theme_ids = theme_manager.get_themes();
+
+	this->reset_items();
+
+	for (const auto& [id, theme] : theme_ids) {
+		this->add_item(id, theme->name, theme->preview_color);
+	}
+
+	this->set_selected_id(theme_manager.get_active_theme_id());
 }

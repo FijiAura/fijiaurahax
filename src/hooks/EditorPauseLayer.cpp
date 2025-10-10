@@ -57,11 +57,11 @@ struct CustomEditorPauseLayer : geode::Modify<CustomEditorPauseLayer, EditorPaus
 
 		if (intSeconds >= 120) {
 			levelLength = "Extra-Long";
-		} else if (intSeconds > 60) {
+		} else if (intSeconds >= 60) {
 			levelLength = "Long";
-		} else if (intSeconds > 30) {
+		} else if (intSeconds >= 30) {
 			levelLength = "Medium";
-		} else if (intSeconds > 10) {
+		} else if (intSeconds >= 10) {
 			levelLength = "Short";
 		}
 

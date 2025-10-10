@@ -1,31 +1,25 @@
 #pragma once
 
+#include <Geode/Geode.hpp>
+
 #include "utils.hpp"
+#include "theme.hpp"
+
 #include <string>
 #include <vector>
 #include <memory>
 #include <string_view>
+#include <algorithm>
 #include <functional>
 
 #include "base/game_variables.hpp"
-#include "classes/extensions/playlayerext.hpp"
 #include "classes/managers/overlaymanager.hpp"
-
-namespace Colors {
-	constexpr auto BACKGROUND = rgb(0x1f2020);
-	constexpr auto BACKGROUND_HOVER = rgba(0x00000070);
-	constexpr auto TEXT = rgb(0xdfdfd7);
-	// constexpr auto PRIMARY = rgb(0xee7762);
-	// constexpr auto PRIMARY = rgb(0x5555ee);
-	constexpr auto PRIMARY = rgb(0x92ceae);
-	// window is slighty darker to help with readability
-	constexpr auto WINDOW = rgb(0x91b7a3);
-	constexpr auto INACTIVE = rgb(0x525351);
-}
 
 struct Theme {
 	float width = 200.0f;
 	float height = 26.0f;
+
+	WindowColor colors{};
 };
 Theme& get_theme();
 
@@ -145,13 +139,44 @@ class SpeedInputMenuItem : public InputMenuItem {
 
 class BindingMenuItem : public ButtonMenuItem {
 public:
-
 	BindingMenuItem() : ButtonMenuItem({}) {}
 
 	virtual void callback() override;
 	virtual void load() override {
 		label = fmt::format("Open Menu: {}", OverlayManager::getKeybindName());
 	}
+};
+
+class ColorPickerMenuItem : public MenuItem {
+	ImVec4 m_color{};
+
+	std::function<void(ColorPickerMenuItem&)> m_cb{};
+	std::function<void(ColorPickerMenuItem&)> m_loadCb{};
+
+public:
+	ColorPickerMenuItem(
+		std::string label,
+		std::function<void(ColorPickerMenuItem&)> cb,
+		std::function<void(ColorPickerMenuItem&)> load
+	) : MenuItem(label), m_cb{cb}, m_loadCb{load} {}
+
+	void setColor(ImU32 color) {
+		m_color = ImColor(color);
+	}
+
+	void setColor(ImVec4 color) {
+		m_color = color;
+	}
+
+	ImU32 getColor() const {
+		return ImColor(m_color);
+	}
+
+	virtual void load() override {
+		this->m_loadCb(*this);
+	}
+
+	virtual void render() override;
 };
 
 class RowMenuItem : public MenuItem {
@@ -169,6 +194,46 @@ public:
 	}
 };
 
+class ComboMenuItem : public MenuItem {
+	struct ComboItem {
+		std::string id;
+		std::string label;
+		std::uint32_t preview_color;
+	};
+
+	std::vector<ComboItem> m_items{};
+	std::string m_selected_id{};
+
+	std::string m_selected_name{};
+
+	void draw_select_button(std::string id, std::string label, bool selected, std::uint32_t = 0);
+
+public:
+	ComboMenuItem(std::string label) : MenuItem(label) {}
+
+	void reset_items() {
+		m_items.clear();
+	}
+
+	void add_item(std::string id, std::string label, std::uint32_t preview_color) {
+		m_items.emplace_back(id, label, preview_color);
+	}
+
+	void set_selected_id(std::string);
+
+	virtual void on_select(std::string id) = 0;
+
+	void render() override;
+};
+
+class ThemeMenuItem : public ComboMenuItem {
+public:
+	ThemeMenuItem() : ComboMenuItem("Theme") {}
+
+	virtual void on_select(std::string id) override;
+	virtual void load() override;
+};
+
 class Window {
 	std::vector<std::unique_ptr<MenuItem>> m_items;
 	ImVec2 m_pos;
@@ -183,13 +248,20 @@ class Window {
 	float m_animation_time = 0.0f;
 	const float m_animation_duration = 0.3f;
 	bool m_animating = false;
+	std::string m_theme_id{};
 
 public:
-	Window(std::string name) : m_name(name) {}
+	Window(std::string name) : m_name(name), m_theme_id(name) {}
 	Window& add(std::unique_ptr<MenuItem> item) {
 		m_items.push_back(std::move(item));
 		return *this;
 	}
+
+	Window& set_theme_id(std::string_view id) {
+		m_theme_id = id;
+		return *this;
+	}
+
 	void draw();
 	ImVec2 pos() const { return m_pos; }
 	ImVec2 target_pos() const { return m_target_pos; }
@@ -220,6 +292,7 @@ public:
 	}
 
 	std::string_view name() const { return m_name; }
+	std::string_view theme_id() const { return m_theme_id; }
 };
 
 class Menu {
@@ -266,5 +339,11 @@ public:
 
 	cocos2d::enumKeyCodes current_bind() const {
 		return m_open_key;
+	}
+
+	void reload_all() {
+		for (auto& window : m_windows) {
+			window.load();
+		}
 	}
 };

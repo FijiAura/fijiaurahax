@@ -17,7 +17,10 @@ bool RateLevelDialog::init(GJGameLevel* level, bool isSend) {
 		return false;
 	}
 
-	this->m_level = level;
+	this->m_levelId = level->m_levelID;
+	this->m_initialFeatured = level->m_featured;
+	this->m_levelVersion = level->m_levelVersion;
+
 	this->m_isSend = isSend;
 	this->m_selectedStars = level->m_stars;
 
@@ -25,15 +28,15 @@ bool RateLevelDialog::init(GJGameLevel* level, bool isSend) {
 		this->m_selectedRating = 2;
 	} else if (level->m_featured > 0) {
 		this->m_selectedRating = 1;
-	} else if (!isSend && m_level->m_stars == 0 && m_level->m_ratingsSum != 0) {
+	} else if (!isSend && level->m_stars == 0 && level->m_ratingsSum != 0) {
 		this->m_selectedRating = -1;
 
-		if (m_level->m_autoLevel) {
+		if (level->m_autoLevel) {
 			this->m_selectedStars = 1;
-		} else if (m_level->m_demon) {
+		} else if (level->m_demon) {
 			this->m_selectedStars = 10;
 		} else {
-			auto currentRating = m_level->m_ratingsSum / m_level->m_ratings;
+			auto currentRating = level->m_ratingsSum / level->m_ratings;
 			switch (currentRating) {
 				case 1:
 					this->m_selectedStars = 2;
@@ -417,16 +420,16 @@ void RateLevelDialog::onSubmit(cocos2d::CCObject*) {
 	m_uploadAction->show();
 
 	auto currentRating = 0;
-	if (m_level->m_featured == 184594917) {
+	if (m_initialFeatured == 184594917) {
 		currentRating = 2;
-	} else if (m_level->m_featured > 0) {
+	} else if (m_initialFeatured > 0) {
 		currentRating = 1;
 	}
 
 	if (m_isSend) {
 		auto rating = std::min(m_selectedRating, 1);
 
-		auto& dispatcher = m_commandDispatcher.emplace(m_level->m_levelID);
+		auto& dispatcher = m_commandDispatcher.emplace(this->m_levelId);
 		dispatcher.setDelegate(this);
 
 		auto command = fmt::format("!send {} {} {} {}", currentDifficultyName(), m_selectedStars, rating, m_reason);
@@ -438,7 +441,7 @@ void RateLevelDialog::onSubmit(cocos2d::CCObject*) {
 	}
 
 	// determine what we actually changed
-	auto& dispatcher = m_commandDispatcher.emplace(m_level->m_levelID);
+	auto& dispatcher = m_commandDispatcher.emplace(this->m_levelId);
 	dispatcher.setDelegate(this);
 
 	auto isUnfeaturing = currentRating >= 1 && m_selectedRating <= 0;
@@ -484,6 +487,18 @@ void RateLevelDialog::onClosePopup(UploadActionPopup* popup) {
 	this->m_uploadAction = nullptr;
 
 	if (popup->getSuccessful()) {
+		auto sendLevelKey = fmt::format("send_{}_{}", this->m_levelId, this->m_levelVersion);
+		auto sendLevelValue = cocos2d::CCString::create("1");
+
+		auto glm = GameLevelManager::sharedState();
+		glm->m_valueDict->setObject(sendLevelValue, sendLevelKey);
+
+		glm->makeTimeStamp("send_level");
+
+		if (m_onSendCompleted) {
+			m_onSendCompleted();
+		}
+
 		this->onClose(nullptr);
 	}
 

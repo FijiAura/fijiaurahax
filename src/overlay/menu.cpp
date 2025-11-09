@@ -110,7 +110,7 @@ Menu::Menu() {
 		.add(std::move(bind_button))
 		.add(std::make_unique<ThemeMenuItem>());
 
-/*
+
 	m_windows.emplace_back("Theme")
 		.add(std::make_unique<CBButtonMenuItem>(fmt::format("Select: {}", ThemeManager::get().get_active_window_id()), [](CBButtonMenuItem& self) {
 			auto& theme_manager = ThemeManager::get();
@@ -197,7 +197,7 @@ Menu::Menu() {
 				geode::utils::clipboard::write(serialized);
 			})
 		));
-*/
+
 }
 
 void Menu::draw_menu() {
@@ -368,3 +368,4 @@ void Menu::toggle() {
 		this->come_back_effect();
 	}
 }
+

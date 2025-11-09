@@ -82,15 +82,15 @@ int OutfitManager::color_for_pos(int pos) {
 int OutfitManager::vanilla_max_for_type(IconType type) {
 	switch (type) {
 		case IconType::Cube:
-			return 48;
+			return 53;
 		case IconType::Ship:
-			return 18;
+			return 19;
 		case IconType::Ball:
-			return 10;
+			return 11;
 		case IconType::Ufo:
 			return 10;
 		case IconType::Special:
-			return 2;
+			return 4;
 		case IconType::Wave:
 			return 1;
 		default:
